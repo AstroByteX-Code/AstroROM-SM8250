@@ -37,5 +37,12 @@ BPROP "system" "ro.build.display.id" "$ASTROROM_PROP"
 # Remove samsung data gather
 FF "CONTEXTSERVICE_ENABLE_SURVEY_MODE" ""
 
+# REMOVE useless packages
+FF "COMMON_CONFIG_SMARTTUTOR_PACKAGES_NAME" ""
+FF "COMMON_CONFIG_SMARTTUTOR_PACKAGES_PATH" ""
+
+#add useful features
+FF "COMMON_SUPPORT_ULTRA_POWER_SAVING" "TRUE"
+
 # Netflix props
 BPROP_IF_DIFF "stock" "system" "ro.netflix.bsp_rev"
