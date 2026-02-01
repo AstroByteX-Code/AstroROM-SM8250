@@ -68,6 +68,7 @@ FILESYSTEM="erofs"
 ### Extra features
 # DEVICE_HAVE_SPEN_SUPPORT=""                   # Device have SPen support
 # DEVICE_HAVE_ESIM_SUPPORT=""                   # Device have esim support
+# DEVICE_HAVE_NPU=""                            # Device have NPU
 
 ### Build Properties
 # DEVICE_FIRST_API_VERSION=""                   # ro.vendor.build.version.release

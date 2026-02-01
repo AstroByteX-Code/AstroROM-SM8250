@@ -296,6 +296,9 @@ done
 #     Integer containing the Android SDK (API) level of the stock firmware.
 #
 #
+#   DEVICE_HAVE_NPU
+#     Boolean flag indicating the presence of a dedicated Neural Processing
+#     Unit (NPU) on the device.
 #
 #
 #   DEVICE_VNDK_VERSION
