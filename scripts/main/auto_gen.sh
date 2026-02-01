@@ -168,6 +168,24 @@ if [[ -z "${DEVICE_HAVE_HIGH_REFRESH_RATE+x}" ]]; then
     fi
 fi
 
+# TODO : a way for check device has NPU or not. Usually flagship device have NPU related props in the xml.
+# We use this method until a new way found. For example : dm3q
+if [[ -z "${SOURCE_HAVE_NPU+x}" ]]; then
+    if grep -q "NPU" "$SEC_FLOATING_FEATURE_FILE"; then
+        SOURCE_HAVE_NPU=true
+    else
+        SOURCE_HAVE_NPU=false
+    fi
+fi
+
+if [[ -z "${DEVICE_HAVE_NPU+x}" ]]; then
+    if grep -q "NPU" "$STOCK_SEC_FLOATING_FEATURE_FILE"; then
+        DEVICE_HAVE_NPU=true
+    else
+        DEVICE_HAVE_NPU=false
+    fi
+fi
+
 LOG_INFO "Automatic generated config-"
 
 for var in $(compgen -v DEVICE_ | sort); do
