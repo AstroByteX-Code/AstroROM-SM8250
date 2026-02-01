@@ -186,6 +186,13 @@ if [[ -z "${DEVICE_HAVE_NPU+x}" ]]; then
     fi
 fi
 
+DEVICE_USE_STOCK_BASE=false
+
+if [ "$STOCK_MODEL" = "$MODEL" ]; then
+    DEVICE_USE_STOCK_BASE=true
+fi
+
+
 LOG_INFO "Automatic generated config-"
 
 for var in $(compgen -v DEVICE_ | sort); do

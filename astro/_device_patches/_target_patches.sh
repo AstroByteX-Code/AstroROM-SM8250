@@ -30,4 +30,3 @@ BPROP "system" "ro.factory.model" "$STOCK_MODEL"
 FF_IF_DIFF "stock" "COMMON_CONFIG_MDNIE_MODE"
 FF_IF_DIFF "stock" "LCD_SUPPORT_AMOLED_DISPLAY"
 
-
