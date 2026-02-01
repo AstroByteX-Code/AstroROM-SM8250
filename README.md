@@ -11,11 +11,11 @@ To create a universal, hassle-free ROM modification solution that will auto patc
 
 <p align="center">
   <a href="https://github.com/SameerAlSahab/ProjectAstro/blob/main/LICENSE"><img src="https://img.shields.io/github/license/SameerAlSahab/ProjectAstro?style=for-the-badge&logo=github"/></a>
-  <a href="https://github.com/SameerAlSahab/ProjectAstro/commits/UI-8.0"><img src="https://img.shields.io/github/last-commit/SameerAlSahab/ProjectAstro/UI-8.0?style=for-the-badge"/></a>
+  <a href="https://github.com/SameerAlSahab/ProjectAstro/commits/ui-8.0"><img src="https://img.shields.io/github/last-commit/SameerAlSahab/ProjectAstro/ui-8.0?style=for-the-badge"/></a>
   <a href="https://github.com/SameerAlSahab/ProjectAstro/stargazers"><img src="https://img.shields.io/github/stars/SameerAlSahab/ProjectAstro?style=for-the-badge"/></a>
   <a href="https://github.com/SameerAlSahab/ProjectAstro/network/members"><img src="https://img.shields.io/github/forks/SameerAlSahab/ProjectAstro?style=for-the-badge"/></a>
   <br>
-  <a href="https://github.com/SameerAlSahab/ProjectAstro/actions"><img src="https://img.shields.io/github/actions/workflow/status/SameerAlSahab/ProjectAstro/Build-AstroROM.yml?style=for-the-badge"/></a>
+  <a href="https://github.com/SameerAlSahab/ProjectAstro/actions"><img src="https://img.shields.io/github/actions/workflow/status/SameerAlSahab/ProjectAstro/build-rom.yml?style=for-the-badge"/></a>
   <img src="https://img.shields.io/github/contributors/SameerAlSahab/ProjectAstro?style=for-the-badge"/>
   <img src="https://img.shields.io/github/issues/SameerAlSahab/ProjectAstro?style=for-the-badge"/>
   <a href="https://github.com/SameerAlSahab/ProjectAstro/watchers"><img src="https://img.shields.io/github/watchers/SameerAlSahab/ProjectAstro?style=for-the-badge"/></a>
