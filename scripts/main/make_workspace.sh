@@ -234,8 +234,21 @@ EOF
     [ -f "$WORKSPACE/product/overlay/product_overlay.apk" ] || \
     (mv "$WORKSPACE/product/overlay"/framework-res*.apk "$WORKSPACE/product/overlay/product_overlay.apk" || ERROR_EXIT "Cannot process rro product overlay.")
 
+# Camera blobs
+    REMOVE "system" "cameradata/portrait_data"
+    REMOVE "system" "cameradata/singletake"
+
+LOG_INFO "Adding stock camera properties.."
+    ADD_FROM_FW "stock" "system" "cameradata/portrait_data"
+    ADD_FROM_FW "stock" "system" "cameradata/singletake"
+
+if ! find "$OBJECTIVE" -type f -name "camera-feature.xml" | grep -q .; then
+    ADD_FROM_FW "stock" "system" "cameradata/camera-feature.xml"
+fi
+
     LOG_END "Build environment ready at $WORKSPACE"
 }
+
 
 LINK_PARTITIONS()
 {

@@ -1,16 +1,5 @@
 
 # Other Device based camera fixes can be found on objectives and platform folder
-REMOVE "system" "cameradata/portrait_data"
-REMOVE "system" "cameradata/singletake"
-
-LOG_INFO "Adding stock camera properties.."
-ADD_FROM_FW "stock" "system" "cameradata/portrait_data"
-ADD_FROM_FW "stock" "system" "cameradata/singletake"
-
-if ! find "$OBJECTIVE" -type f -name "camera-feature.xml" | grep -q .; then
-ADD_FROM_FW "stock" "system" "cameradata/camera-feature.xml"
-fi
-
 # Remove source camera props and add stock only
 if ! find "$OBJECTIVE" -type f -name "floating_feature.xml" | grep -q .; then
 

@@ -19,20 +19,20 @@
 DEPENDENCY_CONFIG=(
     "openjdk-17-jdk|jdk17-openjdk|Java 17+ (Java is required for APK/JAR patching)|true"
     "python3|python|Python 3 (For Python modules)|true"
-    "xmlstarlet|xmlstarlet|XML manipulation (Editing xml files)|true"
-    "lz4|lz4|LZ4 compression (for decompression)|true"
-    "p7zip-full|p7zip|7-Zip (For extraction)|true"
-    "bc|bc|BC calculator (Size calculations)|true"
-    "zip|zip|Zip utility (For zipping)|true"
-    "e2fsprogs|e2fsprogs|EXT4 filesystem tools|true"
-    "attr|attr|xattr (SELinux configs)|true"
-    "zipalign|android-sdk-build-tools|Zipalign (APKs alignment)|true"
-    "f2fs-tools|f2fs-tools|(Tools for F2FS)|true"
-    "nodejs|nodejs|Node.js (JS-based utilities)|true"
-    "jq|jq|(For JQ)|true"
-    "ffmpeg|ffmpeg|(Video conversion)|true"
-    "webp|libwebp-utils|(WEBP conversion)|true"
-    "acl|acl|grants regular user permissions|true"
+    "xmlstarlet|xmlstarlet|xmlstarlet for editing xml files|true"
+    "lz4|lz4|LZ4 for decompress and compress|true"
+    "p7zip-full|p7zip|7-Zip for extraction and compress|true"
+    "bc|bc|BC calculator for size calculations|true"
+    "zip|zip|Zip utility for zipping|true"
+    "e2fsprogs|e2fsprogs|e2fsprogs for ext4 filesystem tools|true"
+    "attr|attr|xattr for selinux configs|true"
+    "zipalign|android-sdk-build-tools|zipalign for APKs alignment|true"
+    "f2fs-tools|f2fs-tools|f2fs-tools for f2fs filesystem|true"
+    "nodejs|nodejs|Node.js for JS-based works|true"
+    "jq|jq|jq for jq based usages|true"
+    "ffmpeg|ffmpeg|ffmpeg for video compress and conversion|true"
+    "webp|libwebp-utils|webp for compressing images|true"
+    "acl|acl|acl for granting regular user permissions|true"
 )
 
 DETECTED_DISTRO_TYPE=""
@@ -177,7 +177,7 @@ CHECK_DEPENDENCY()
         dpkg -s "$PACKAGE_NAME" &>/dev/null && return 0
     fi
 
-    LOG_BEGIN "Installing dependency: $PACKAGE_DISPLAY_NAME..."
+    LOG_BEGIN "Installing  $PACKAGE_DISPLAY_NAME..."
     local INSTALLATION_SUCCESSFUL=false
 
     if [[ "$DETECTED_DISTRO_TYPE" == "arch" ]]; then
