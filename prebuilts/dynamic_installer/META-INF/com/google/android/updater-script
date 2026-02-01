@@ -1,0 +1,47 @@
+#MAGISK
+setdefault   import_addons        on
+setdefault   extraction_speed     default
+
+#AstroROM script starts here:
+ui_print " "
+ui_print "Welcome to AstroROM Installer!"
+ui_print " "
+ui_print "AstroROM  __ROM_VERSION__  for __MODEL_NAME__  "
+ui_print " "
+ui_print "AstroROM is coded by @SameerAlSahab "
+ui_print " "
+ui_print "Build: __BUILD_DATE__"
+
+
+
+# Check device
+ui_print "Checking device ..."
+
+device_codename=$(getprop ro.product.vendor.device)
+if [ "$device_codename" != "__CODENAME__" ]; then
+    abort "Error: This ROM is for __MODEL_NAME__ (__CODENAME__ only). Detected: $device_codename"
+else
+    ui_print "Device is compatible."
+fi
+
+
+
+# Install
+   ui_print "Installing ROM.... .It will take some time."
+   ui_print "Do not cancel or force reboot until installation is complete."
+
+   update_zip super.img $(find_block super)
+
+__EXTRA_ASSERTS__
+
+   ui_print "AstroROM successfully installed."
+
+
+# Ending
+   ui_print " If you want to reboot to recovery, press vol + "
+   ui_print " If you want to close the installer, press vol - "
+   if $yes; then
+      run_program "$addons/reboot" recovery
+   else
+      end "Installer closed... "
+   fi
