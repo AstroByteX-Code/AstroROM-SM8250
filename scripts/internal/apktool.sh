@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 #
-#  Copyright (c) 2025 Sameer Al Sahab
-#  Licensed under the MIT License. See LICENSE file for details.
+#  Copyright (c) 2025 Sameer Al Sahab
+#  Licensed under the MIT License. See LICENSE file for details.
 #
-#  Permission is hereby granted, free of charge, to any person obtaining a copy
-#  of this software and associated documentation files (the "Software"), to deal
-#  in the Software without restriction, including without limitation the rights
-#  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-#  copies of the Software, and to permit persons to whom the Software is
-#  furnished to do so, subject to the following conditions:
+#  Permission is hereby granted, free of charge, to any person obtaining a copy
+#  of this software and associated documentation files (the "Software"), to deal
+#  in the Software without restriction, including without limitation the rights
+#  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#  copies of the Software, and to permit persons to whom the Software is
+#  furnished to do so, subject to the following conditions:
 #
-#  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-#  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-#  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 #
 
 # Special Thanks to @BlackMesa123 for his help and hints on github issues
@@ -22,7 +22,6 @@
 # https://github.com/iBotPeaches/Apktool/pull/3879
 # https://github.com/SameerAlSahab/smali_patch/blob/main/smali_patch.py
 # https://github.com/iBotPeaches/Apktool/issues/1775
-
 
 DEFAULT_SDK="36"  #branch sixteen
 USABLE_THREADS=$(( $(nproc) - 1 ))
@@ -37,51 +36,13 @@ CERT_PK8=""
 DECOMPILE_RES=true
 
 APK_TO_DECOMPILE_RES=(
-     product_overlay.apk
-     #wallpaper-res.apk
-	 #SecSettings.apk
-	 #SystemUI.apk
+    product_overlay.apk
+    #wallpaper-res.apk
+    #SecSettings.apk
+    #SystemUI.apk
 )
 
-
 declare -A PATCH_CACHE
-
-
-_LOAD_MARKERS()
-{
-    PATCH_CACHE=()
-
-    if [[ -f "$PATCH_MARKER_FILE" ]]; then
-        while read -r TARGET_NAME HASH || [[ -n "$TARGET_NAME" ]]; do
-            PATCH_CACHE["$TARGET_NAME"]="$HASH"
-        done < "$PATCH_MARKER_FILE"
-    fi
-}
-
-_UPDATE_MARKER()
-{
-    local TARGET_NAME="$1"
-    local HASH="$2"
-    local TEMP_FILE=$(mktemp)
-
-    touch "$PATCH_MARKER_FILE"
-
-    awk -v name="$TARGET_NAME" -v h="$HASH" '
-        $1 == name { print name, h; found=1; next; }
-        { print }
-        END { if (!found) print name, h; }
-    ' "$PATCH_MARKER_FILE" > "$TEMP_FILE" && mv "$TEMP_FILE" "$PATCH_MARKER_FILE"
-}
-
-
-CALC_HASH()
-{
-    local PATCH_DIR="$1"
-    find "$PATCH_DIR" \( -name "*.patch" -o -name "*.smalipatch" \) -type f -exec md5sum {} + | \
-        sort | md5sum | cut -d' ' -f1
-}
-
-
 
 INSTALL_FRAMEWORK()
 {
@@ -107,7 +68,6 @@ INSTALL_FRAMEWORK()
     echo "$SDK"
 }
 
-
 FIND_TARGET()
 {
     local FILE_NAME="$1"
@@ -121,7 +81,6 @@ FIND_TARGET()
         fi
     fi
 
-
     # As of now , we dont need partition paths except them
     if [[ "$FILE_NAME" == *.apk ]]; then
         local PARTITIONS=("system" "system_ext" "product")
@@ -129,7 +88,7 @@ FIND_TARGET()
             local PART_DIR=$(GET_PARTITION_PATH "$PART") || continue
             [[ -z "$PART_DIR" || ! -d "$PART_DIR" ]] && continue
 
-                # For now we take app and priv-app cause preload and hidden apps are useless.
+            # For now we take app and priv-app cause preload and hidden apps are useless.
             local SUBDIRS=("app" "priv-app" "overlay")
             for SUBDIR in "${SUBDIRS[@]}"; do
                 [[ ! -d "$PART_DIR/$SUBDIR" ]] && continue
@@ -144,7 +103,6 @@ FIND_TARGET()
 
     return 1
 }
-
 
 DECOMPILE()
 {
@@ -181,12 +139,12 @@ DECOMPILE()
     # DEX v041 Container Bypass (OneUI 8+). I saw OneUI8+ uses dex 041 for services.jar
     if [[ "$DEX_MAGIC" == "30343100" ]]; then
 
-    # Decompile with --no-src
+        # Decompile with --no-src
         java -jar "$PREBUILTS/apktool/apktool.jar" d -api "$API" -f -j "$USABLE_THREADS" \
             -o "$WORK_DIR" -p "$FRAMEWORK_DIR" -t "$SDK" -s "$FILE" > /dev/null 2>&1 || \
             ERROR_EXIT "Decompile failed"
 
-    # Baksmali each dex parts
+        # Baksmali each dex parts
         local PART=1
         while true; do
             local INPUT="$FILE/classes.dex"
@@ -211,15 +169,14 @@ DECOMPILE()
         local FLAGS=("-f" "-j" "$USABLE_THREADS" "-o" "$WORK_DIR" "-p" "$FRAMEWORK_DIR" "-t" "$SDK" "-s")
 
         # Resource decompile for listed APKs we declared on top
-		local IN_LIST="false"
-		for ITEM in "${APK_TO_DECOMPILE_RES[@]}"; do
-			[[ "$ITEM" == "$NAME" ]] && IN_LIST="true" && break
-		done
+        local IN_LIST="false"
+        for ITEM in "${APK_TO_DECOMPILE_RES[@]}"; do
+            [[ "$ITEM" == "$NAME" ]] && IN_LIST="true" && break
+        done
 
-
-if ! GET_FEATURE "DECOMPILE_RES" || [[ "$IN_LIST" != "true" ]]; then
-    FLAGS+=("-r")
-fi
+        if ! GET_FEATURE "DECOMPILE_RES" || [[ "$IN_LIST" != "true" ]]; then
+            FLAGS+=("-r")
+        fi
 
         java -jar "$PREBUILTS/apktool/apktool.jar" d "${FLAGS[@]}" "$FILE" > /dev/null 2>&1 || \
             ERROR_EXIT "Decompile failed"
@@ -246,12 +203,12 @@ fi
     LOG_END "Decompiled $NAME"
 }
 
-
-BUILD() {
+BUILD()
+{
     local FILE="$1"
-    
+
     [[ -z "$FILE" ]] && ERROR_EXIT "No file specified"
-    
+
     if [[ "$FILE" != /* ]]; then
         FILE="$WORKSPACE/$FILE"
     fi
@@ -276,7 +233,6 @@ BUILD() {
 
     mkdir -p "$DIST_DIR"
 
-
     local APKTOOL_FLAGS=(
         "b"
         "-api" "$API"
@@ -287,26 +243,25 @@ BUILD() {
 
     if [[ "$EXT" == "apk" ]]; then
         # -c: Copies original META-INF and manifest (Preserves original structure)
-        APKTOOL_FLAGS+=("-c") 
+        APKTOOL_FLAGS+=("-c")
     fi
 
     local BUILD_OUTPUT
     if ! BUILD_OUTPUT=$(java -jar "$PREBUILTS/apktool/apktool.jar" "${APKTOOL_FLAGS[@]}" "$WORK_DIR" 2>&1); then
         LOG_WARN "Recompilation failed. Check logs below:"
-		
+
         # We dont show I: information of progress until get an error. Same thing -q flag do
-        echo "$BUILD_OUTPUT" | sed '/^I:/d' 
+        echo "$BUILD_OUTPUT" | sed '/^I:/d'
         return 1
     fi
 
-
     if [[ "$EXT" == "apk" ]]; then
-            # Sign the apk if turned on
+        # Sign the apk if turned on
         if [[ "$DO_SIGN_APK" == "true" ]]; then
             LOG_INFO "Signing APK..."
             local UNSIGNED="$DIST_DIR/${NAME}.unsigned"
             mv "$BUILT_FILE" "$UNSIGNED"
-            
+
             if ! java -jar "$PREBUILTS/signapk/signapk.jar" "$CERT_PEM" "$CERT_PK8" \
                 "$UNSIGNED" "$BUILT_FILE" > /dev/null 2>&1; then
                 ERROR_EXIT "Sign failed"
@@ -314,7 +269,7 @@ BUILD() {
             rm -f "$UNSIGNED"
         else
             # Zipalign APKs
-		    # https://developer.android.com/tools/zipalign
+            # https://developer.android.com/tools/zipalign
             local ALIGNED="$DIST_DIR/aligned.apk"
             if zipalign -p -f 4 "$BUILT_FILE" "$ALIGNED" > /dev/null 2>&1; then
                 mv -f "$ALIGNED" "$BUILT_FILE"
@@ -333,12 +288,11 @@ BUILD() {
     rm -rf "$WORK_DIR"
 
     rm -f "$DIR/$NAME.prof" "$DIR/$NAME.bprof"
-    rm -rf "$DIR/oat" 
+    rm -rf "$DIR/oat"
 
     LOG_END "Built $NAME"
     return 0
 }
-
 
 # For instance , patch failed we will start from scratch
 RESTORE_TARGET()
@@ -352,7 +306,7 @@ RESTORE_TARGET()
         SOURCE="$SOURCE_DIR/system/system/framework/$TARGET_NAME"
     elif [[ "$TARGET_NAME" == *.apk ]]; then
 
-    # As of now , we dont need partition paths except them
+        # As of now , we dont need partition paths except them
         local PARTITIONS=("system/system" "system_ext" "product")
         for PART in "${PARTITIONS[@]}"; do
             [[ ! -d "$SOURCE_DIR/$PART" ]] && continue
@@ -363,18 +317,16 @@ RESTORE_TARGET()
 
     [[ -z "$SOURCE" || ! -f "$SOURCE" ]] && return 1
 
-
     if cmp --silent "$SOURCE" "$CURRENT_PATH"; then
         return 0
     fi
 
-     cp -f "$SOURCE" "$CURRENT_PATH" || ERROR_EXIT "Failed to revert changes for $TARGET_NAME"
+    cp -f "$SOURCE" "$CURRENT_PATH" || ERROR_EXIT "Failed to revert changes for $TARGET_NAME"
 
     LOG_END "Restored $TARGET_NAME"
 
     return 0
 }
-
 
 BUILD_ALL()
 {
@@ -417,20 +369,18 @@ GET_DEX_API()
     esac
 }
 
-
-_APKTOOL_PATCH() {
-
+_APKTOOL_PATCH()
+{
     _LOAD_MARKERS
 
     local SEARCH_PATHS=(
-    "$OBJECTIVE"
-    "$PROJECT_DIR"
-    "$WORKSPACE/patches"
-)
+        "$OBJECTIVE"
+        "$PROJECT_DIR"
+        "$WORKSPACE/patches"
+    )
 
     local TARGETS=()
     declare -A TARGET_MAP
-
 
     for BASE in "${SEARCH_PATHS[@]}"; do
         [[ ! -d "$BASE" ]] && continue
@@ -447,10 +397,8 @@ _APKTOOL_PATCH() {
         return 0
     fi
 
-
     for TARGET in "${TARGETS[@]}"; do
         local PATCH_DIRS=(${TARGET_MAP[$TARGET]})
-
 
         local HASH=""
         for P_DIR in "${PATCH_DIRS[@]}"; do
@@ -460,11 +408,9 @@ _APKTOOL_PATCH() {
 
         local CACHED="${PATCH_CACHE[$TARGET]:-}"
 
-
         if [[ -n "$CACHED" && "$CACHED" == "$HASH" ]]; then
             continue
         fi
-
 
         local TARGET_FILE=$(FIND_TARGET "$TARGET")
         if [[ -z "$TARGET_FILE" ]]; then
@@ -474,19 +420,16 @@ _APKTOOL_PATCH() {
 
         local WORK_DIR="$(dirname "$TARGET_FILE")/${TARGET}_decompiled"
 
-
         if [[ -n "$CACHED" && "$CACHED" != "$HASH" ]]; then
             LOG_INFO "Changes detected in $TARGET"
             [[ -d "$WORK_DIR" ]] && rm -rf "$WORK_DIR"
             RESTORE_TARGET "$TARGET" "$TARGET_FILE" || ERROR_EXIT "Failed to revert changes $TARGET"
         fi
 
-
         if [[ ! -d "$WORK_DIR" ]]; then
             local RELATIVE="${TARGET_FILE#$WORKSPACE/}"
             DECOMPILE "$RELATIVE" || ERROR_EXIT "Decompile failed: $TARGET"
         fi
-
 
         local PATCHES=()
         for P_DIR in "${PATCH_DIRS[@]}"; do
@@ -507,13 +450,12 @@ _APKTOOL_PATCH() {
                 (
                     cd "$WORK_DIR" || ERROR_EXIT "Cannot change directory to $WORK_DIR"
 
-                    # 
                     # -p1: Strip one leading directory component from file paths.
                     # -s: Work silently unless an error occurs. (Clean output)
                     # -f: Force/Ignore bad Prereq patches, assume unreversed.
                     # -l: Ignore white space changes (line endings, indentation) for better matching.
                     # --dry-run: Test the patch without modifying any files.
-					#
+                    #
                     patch -p1 -s -f -l --dry-run < "$P" >/dev/null 2>&1
 
                     if [[ $? -eq 0 ]]; then
@@ -535,7 +477,6 @@ _APKTOOL_PATCH() {
             fi
         done
 
-
         # Merge resources and run scripts
         for P_DIR in "${PATCH_DIRS[@]}"; do
             for SUB in "res" "smali" "assets" "lib"; do
@@ -545,12 +486,12 @@ _APKTOOL_PATCH() {
                 [[ -d "$S_CLASS" ]] && rsync -a "$S_CLASS/" "$WORK_DIR/$(basename "$S_CLASS")/"
             done
 
- for SCRIPT in "$P_DIR"/*.sh; do
- if [[ -f "$SCRIPT" ]]; then
- LOG_INFO "Executing $(basename "$SCRIPT")"
- (cd "$WORK_DIR" && . "$SCRIPT") || ERROR_EXIT "Script failed: $(basename "$SCRIPT")"
- fi
- done
+            for SCRIPT in "$P_DIR"/*.sh; do
+                if [[ -f "$SCRIPT" ]]; then
+                    LOG_INFO "Executing $(basename "$SCRIPT")"
+                    (cd "$WORK_DIR" && . "$SCRIPT") || ERROR_EXIT "Script failed: $(basename "$SCRIPT")"
+                fi
+            done
         done
 
         _UPDATE_MARKER "$TARGET" "$HASH"
@@ -561,8 +502,8 @@ _APKTOOL_PATCH() {
     BUILD_ALL
 }
 
-
-ADD_PATCH() {
+ADD_PATCH()
+{
     local TARGET="$1"
     local SOURCE="$2"
 

@@ -1,4 +1,4 @@
-##!/usr/bin/env bash
+#!/usr/bin/env bash
 #
 #  Copyright (c) 2025 Sameer Al Sahab
 #  Licensed under the MIT License. See LICENSE file for details.
@@ -17,200 +17,177 @@
 
 
 
-# Usage: FF "TAG" "VALUE"
-# FF "TAG" "" ->> means deletion of line
-# Modifies /system/system/etc/floating_feature.xml for Samsung-specific features
-FF() {
-    local TAG="$1"
-    local TAG_VALUE="$2"
-    local FF_XML_FILE="${WORKSPACE}/system/system/etc/floating_feature.xml"
+SEC_FLOATING_FEATURE_PREFIX="SEC_FLOATING_FEATURE_"
+
+APPLY_FF_PREFIX()
+{
+    local -n TAG_REFERENCE="$1"
+
+    if [[ "$TAG_REFERENCE" != ${SEC_FLOATING_FEATURE_PREFIX}* ]]; then
+        TAG_REFERENCE="${SEC_FLOATING_FEATURE_PREFIX}${TAG_REFERENCE}"
+    fi
+}
+
+FF()
+{
+    local FEATURE_TAG="$1"
+    local FEATURE_VALUE="$2"
+    local FLOATING_FEATURE_FILE="${WORKSPACE}/system/system/etc/floating_feature.xml"
 
     if ! command -v xmlstarlet &> /dev/null; then
         ERROR_EXIT "xmlstarlet not found."
         return 1
     fi
 
-    _SEC_FF_PREFIX TAG
+    APPLY_FF_PREFIX FEATURE_TAG
 
-    if [[ -z "$TAG_VALUE" ]]; then
-        if xmlstarlet sel -t -v "//${TAG}" "$FF_XML_FILE" &>/dev/null; then
-            xmlstarlet ed -L -d "//${TAG}" "$FF_XML_FILE"
-            LOG "Deleted floating feature: <${TAG}>"
+    if [[ -z "$FEATURE_VALUE" ]]; then
+        if xmlstarlet sel -t -v "//${FEATURE_TAG}" "$FLOATING_FEATURE_FILE" &>/dev/null; then
+            xmlstarlet ed -L -d "//${FEATURE_TAG}" "$FLOATING_FEATURE_FILE"
+            LOG_INFO "Deleted floating feature: ${COLOR_GRAY}<${FEATURE_TAG}>${COLOR_RESET}"
         fi
         return
     fi
 
-    local current_value
-    current_value=$(xmlstarlet sel -t -v "//${TAG}" "$FF_XML_FILE" 2>/dev/null || true)
+    local CURRENT_FEATURE_VALUE
+    CURRENT_FEATURE_VALUE=$(xmlstarlet sel -t -v "//${FEATURE_TAG}" "$FLOATING_FEATURE_FILE" 2>/dev/null || true)
 
-    if [[ -n "$current_value" ]]; then
-        if [[ "$current_value" != "$TAG_VALUE" ]]; then
-            xmlstarlet ed -L -u "//${TAG}" -v "$TAG_VALUE" "$FF_XML_FILE"
-            LOG "Updated : <${TAG}>${TAG_VALUE}</${TAG}>"
+    if [[ -n "$CURRENT_FEATURE_VALUE" ]]; then
+        if [[ "$CURRENT_FEATURE_VALUE" != "$FEATURE_VALUE" ]]; then
+            xmlstarlet ed -L -u "//${FEATURE_TAG}" -v "$FEATURE_VALUE" "$FLOATING_FEATURE_FILE"
+            LOG_INFO "Updated: ${COLOR_CYAN}${FEATURE_TAG}${COLOR_RESET} = ${COLOR_GREEN}${FEATURE_VALUE}${COLOR_RESET}"
         else
-            LOG_INFO "Unchanged : <${TAG}> already set to ${TAG_VALUE}"
+            LOG_INFO "Unchanged: ${COLOR_GRAY}${FEATURE_TAG}${COLOR_RESET} already set to ${FEATURE_VALUE}"
         fi
     else
-        # Add new tag
-        xmlstarlet ed -L -s '/SecFloatingFeatureSet' -t elem -n "$TAG" -v "$TAG_VALUE" "$FF_XML_FILE"
-        LOG "Added : <${TAG}>${TAG_VALUE}</${TAG}>"
+        xmlstarlet ed -L -s '/SecFloatingFeatureSet' -t elem -n "$FEATURE_TAG" -v "$FEATURE_VALUE" "$FLOATING_FEATURE_FILE"
+        LOG_INFO "Added: ${COLOR_CYAN}${FEATURE_TAG}${COLOR_RESET} = ${COLOR_GREEN}${FEATURE_VALUE}${COLOR_RESET}"
     fi
 }
 
+FF_IF_DIFF()
+{
+    local SOURCE_FIRMWARE_TYPE="$1"
+    local FEATURE_TAG="$2"
 
-#
-# Samsung floating feature have a common prefix at tag starting. [SEC_FLOATING_FEATURE_]
-#
-_SEC_FF_PREFIX() {
-    local -n TAG_REFERANCE="$1"
-    local REQUIRED_PREFIX="SEC_FLOATING_FEATURE_"
-    if [[ "$TAG_REFERANCE" != ${REQUIRED_PREFIX}* ]]; then
-        TAG_REFERANCE="${REQUIRED_PREFIX}${TAG_REFERANCE}"
-    fi
-}
+    local SOURCE_FEATURE_VALUE
+    SOURCE_FEATURE_VALUE=$(GET_FF_VAL "$SOURCE_FIRMWARE_TYPE" "$FEATURE_TAG")
 
+    local CURRENT_FEATURE_VALUE
+    CURRENT_FEATURE_VALUE=$(GET_FF_VAL "$FEATURE_TAG")
 
-#
-# Usage: FF_IF_DIFF "fw_type" "TAG" "VALUE"
-# Sets floating feature only if value differs from existing one
-# If absent in the fw which we are comparing delete the line
-#
-
-FF_IF_DIFF() {
-    local SOURCE_TYPE="$1"
-    local TAG="$2"
-
-
-    local SOURCE_VAL
-    SOURCE_VAL=$(GET_FF_VAL "$SOURCE_TYPE" "$TAG")
-
-
-    local CURRENT_VAL
-    CURRENT_VAL=$(GET_FF_VAL "$TAG")
-
-
-    if [[ "$SOURCE_VAL" != "$CURRENT_VAL" ]]; then
-        FF "$TAG" "$SOURCE_VAL"
+    if [[ "$SOURCE_FEATURE_VALUE" != "$CURRENT_FEATURE_VALUE" ]]; then
+        FF "$FEATURE_TAG" "$SOURCE_FEATURE_VALUE"
     else
-        LOG_INFO "No changes needed for $TAG"
+        LOG_INFO "No changes needed for ${COLOR_GRAY}${FEATURE_TAG}${COLOR_RESET}"
     fi
 }
 
-
-#
-# Usage: GET_FF_VAL [source] "TAG_NAME"
-# Retrieves the value of a specified floating feature tag from the XML file.
-#
-GET_FF_VAL() {
-    local FW_TYPE="main"
-    local TAG
+GET_FF_VAL()
+{
+    local FIRMWARE_TYPE="main"
+    local FEATURE_TAG
 
     if [[ $# -eq 1 ]]; then
-        TAG="$1"
+        FEATURE_TAG="$1"
     elif [[ $# -eq 2 ]]; then
-        FW_TYPE="$1"
-        TAG="$2"
+        FIRMWARE_TYPE="$1"
+        FEATURE_TAG="$2"
     else
         LOG_WARN "Invalid number of arguments. Usage: GET_FF_VAL [source] 'TAG'" >&2
         return 1
     fi
 
-    local workspace_dir
-    workspace_dir=$(GET_FW_DIR "$FW_TYPE") || return 1
+    local FIRMWARE_WORKSPACE_DIR
+    FIRMWARE_WORKSPACE_DIR=$(GET_FW_DIR "$FIRMWARE_TYPE") || return 1
 
-    local FF_XML_FILE="${workspace_dir}/system/system/etc/floating_feature.xml"
-    [[ ! -f "$FF_XML_FILE" ]] && return 1
+    local FLOATING_FEATURE_FILE="${FIRMWARE_WORKSPACE_DIR}/system/system/etc/floating_feature.xml"
+    [[ ! -f "$FLOATING_FEATURE_FILE" ]] && return 1
 
-    _SEC_FF_PREFIX TAG
-    xmlstarlet sel -t -v "//${TAG}" "$FF_XML_FILE" 2>/dev/null || true
+    APPLY_FF_PREFIX FEATURE_TAG
+    xmlstarlet sel -t -v "//${FEATURE_TAG}" "$FLOATING_FEATURE_FILE" 2>/dev/null || true
 }
 
 
-# Usage: CF "TAG_NAME" "ATTRIBUTE=VALUE" ["ATTRIBUTE=VALUE" ...]
-CF() {
-    local TAG="$1"
+
+CF()
+{
+    local CAMERA_TAG="$1"
     shift
-    local CF_XML_FILE="${WORKSPACE}/system/system/cameradata/camera-feature.xml"
+    local CAMERA_FEATURE_FILE="${WORKSPACE}/system/system/cameradata/camera-feature.xml"
 
-
-    local tag_exists
-    tag_exists=$(xmlstarlet sel -t -c "//local[@name='$TAG']" "$CF_XML_FILE" 2>/dev/null || true)
+    local TAG_EXISTS
+    TAG_EXISTS=$(xmlstarlet sel -t -c "//local[@name='$CAMERA_TAG']" "$CAMERA_FEATURE_FILE" 2>/dev/null || true)
 
     if [[ $# -eq 0 ]] || [[ -z "$1" ]]; then
-        if [[ -n "$tag_exists" ]]; then
-            xmlstarlet ed -L -d "//local[@name='$TAG']" "$CF_XML_FILE"
-            LOG "Deleted camera feature tag: $TAG"
+        if [[ -n "$TAG_EXISTS" ]]; then
+            xmlstarlet ed -L -d "//local[@name='$CAMERA_TAG']" "$CAMERA_FEATURE_FILE"
+            LOG_INFO "Deleted camera feature: ${COLOR_GRAY}${CAMERA_TAG}${COLOR_RESET}"
         else
-            LOG_INFO "Tag $TAG doesn't exist, nothing to delete"
+            LOG_INFO "Tag ${COLOR_GRAY}${CAMERA_TAG}${COLOR_RESET} doesn't exist, nothing to delete"
         fi
         return
     fi
 
-    declare -A ATTRS
-    local delete_mode=false
+    declare -A CAMERA_ATTRIBUTES
+    local DELETE_MODE=false
 
-    for arg in "$@"; do
-        if [[ "$arg" == *"="* ]]; then
-            local attr_name="${arg%%=*}"
-            local attr_value="${arg#*=}"
+    for ATTRIBUTE_ARG in "$@"; do
+        if [[ "$ATTRIBUTE_ARG" == *"="* ]]; then
+            local ATTRIBUTE_NAME="${ATTRIBUTE_ARG%%=*}"
+            local ATTRIBUTE_VALUE="${ATTRIBUTE_ARG#*=}"
 
-
-            if [[ -z "$attr_value" ]]; then
-                ATTRS["$attr_name"]="__DELETE__"
+            if [[ -z "$ATTRIBUTE_VALUE" ]]; then
+                CAMERA_ATTRIBUTES["$ATTRIBUTE_NAME"]="__DELETE__"
             else
-                ATTRS["$attr_name"]="$attr_value"
+                CAMERA_ATTRIBUTES["$ATTRIBUTE_NAME"]="$ATTRIBUTE_VALUE"
             fi
         fi
     done
 
-
-    if [[ -z "$tag_exists" ]]; then
-        local attr_string=""
-        for attr in "${!ATTRS[@]}"; do
-            if [[ "${ATTRS[$attr]}" != "__DELETE__" ]]; then
-                attr_string+=" $attr=\"${ATTRS[$attr]}\""
+    if [[ -z "$TAG_EXISTS" ]]; then
+        local ATTRIBUTE_STRING=""
+        for ATTRIBUTE_NAME in "${!CAMERA_ATTRIBUTES[@]}"; do
+            if [[ "${CAMERA_ATTRIBUTES[$ATTRIBUTE_NAME]}" != "__DELETE__" ]]; then
+                ATTRIBUTE_STRING+=" $ATTRIBUTE_NAME=\"${CAMERA_ATTRIBUTES[$ATTRIBUTE_NAME]}\""
             fi
         done
 
         xmlstarlet ed -L \
             -s '/resources' -t elem -n "local" \
-            -i '//local[not(@name)]' -t attr -n "name" -v "$TAG" \
-            "$CF_XML_FILE"
+            -i '//local[not(@name)]' -t attr -n "name" -v "$CAMERA_TAG" \
+            "$CAMERA_FEATURE_FILE"
 
-
-        for attr in "${!ATTRS[@]}"; do
-            if [[ "${ATTRS[$attr]}" != "__DELETE__" ]]; then
+        for ATTRIBUTE_NAME in "${!CAMERA_ATTRIBUTES[@]}"; do
+            if [[ "${CAMERA_ATTRIBUTES[$ATTRIBUTE_NAME]}" != "__DELETE__" ]]; then
                 xmlstarlet ed -L \
-                    -i "//local[@name='$TAG']" -t attr -n "$attr" -v "${ATTRS[$attr]}" \
-                    "$CF_XML_FILE"
+                    -i "//local[@name='$CAMERA_TAG']" -t attr -n "$ATTRIBUTE_NAME" -v "${CAMERA_ATTRIBUTES[$ATTRIBUTE_NAME]}" \
+                    "$CAMERA_FEATURE_FILE"
             fi
         done
 
-        LOG "Added camera feature: $TAG with attributes"
+        LOG_INFO "Added camera feature: ${COLOR_CYAN}${CAMERA_TAG}${COLOR_RESET}"
     else
+        for ATTRIBUTE_NAME in "${!CAMERA_ATTRIBUTES[@]}"; do
+            local CURRENT_ATTRIBUTE_VALUE
+            CURRENT_ATTRIBUTE_VALUE=$(xmlstarlet sel -t -v "//local[@name='$CAMERA_TAG']/@$ATTRIBUTE_NAME" "$CAMERA_FEATURE_FILE" 2>/dev/null || true)
 
-        for attr in "${!ATTRS[@]}"; do
-            local current_value
-            current_value=$(xmlstarlet sel -t -v "//local[@name='$TAG']/@$attr" "$CF_XML_FILE" 2>/dev/null || true)
-
-            if [[ "${ATTRS[$attr]}" == "__DELETE__" ]]; then
-
-                if [[ -n "$current_value" ]]; then
-                    xmlstarlet ed -L -d "//local[@name='$TAG']/@$attr" "$CF_XML_FILE"
-                    LOG "Deleted attribute $attr from $TAG"
+            if [[ "${CAMERA_ATTRIBUTES[$ATTRIBUTE_NAME]}" == "__DELETE__" ]]; then
+                if [[ -n "$CURRENT_ATTRIBUTE_VALUE" ]]; then
+                    xmlstarlet ed -L -d "//local[@name='$CAMERA_TAG']/@$ATTRIBUTE_NAME" "$CAMERA_FEATURE_FILE"
+                    LOG_INFO "Deleted attribute ${COLOR_YELLOW}${ATTRIBUTE_NAME}${COLOR_RESET} from ${COLOR_CYAN}${CAMERA_TAG}${COLOR_RESET}"
                 fi
             else
-
-                if [[ -n "$current_value" ]]; then
-                    if [[ "$current_value" != "${ATTRS[$attr]}" ]]; then
-                        xmlstarlet ed -L -u "//local[@name='$TAG']/@$attr" -v "${ATTRS[$attr]}" "$CF_XML_FILE"
-                        LOG "Updated $TAG: $attr=${ATTRS[$attr]}"
+                if [[ -n "$CURRENT_ATTRIBUTE_VALUE" ]]; then
+                    if [[ "$CURRENT_ATTRIBUTE_VALUE" != "${CAMERA_ATTRIBUTES[$ATTRIBUTE_NAME]}" ]]; then
+                        xmlstarlet ed -L -u "//local[@name='$CAMERA_TAG']/@$ATTRIBUTE_NAME" -v "${CAMERA_ATTRIBUTES[$ATTRIBUTE_NAME]}" "$CAMERA_FEATURE_FILE"
+                        LOG_INFO "Updated ${COLOR_CYAN}${CAMERA_TAG}${COLOR_RESET}: ${ATTRIBUTE_NAME}=${COLOR_GREEN}${CAMERA_ATTRIBUTES[$ATTRIBUTE_NAME]}${COLOR_RESET}"
                     else
-                        LOG_INFO "Unchanged: $TAG $attr already set to ${ATTRS[$attr]}"
+                        LOG_INFO "Unchanged: ${COLOR_GRAY}${CAMERA_TAG}${COLOR_RESET} ${ATTRIBUTE_NAME} already set to ${CAMERA_ATTRIBUTES[$ATTRIBUTE_NAME]}"
                     fi
                 else
-                    xmlstarlet ed -L -i "//local[@name='$TAG']" -t attr -n "$attr" -v "${ATTRS[$attr]}" "$CF_XML_FILE"
-                    LOG "Added attribute to $TAG: $attr=${ATTRS[$attr]}"
+                    xmlstarlet ed -L -i "//local[@name='$CAMERA_TAG']" -t attr -n "$ATTRIBUTE_NAME" -v "${CAMERA_ATTRIBUTES[$ATTRIBUTE_NAME]}" "$CAMERA_FEATURE_FILE"
+                    LOG_INFO "Added attribute to ${COLOR_CYAN}${CAMERA_TAG}${COLOR_RESET}: ${ATTRIBUTE_NAME}=${COLOR_GREEN}${CAMERA_ATTRIBUTES[$ATTRIBUTE_NAME]}${COLOR_RESET}"
                 fi
             fi
         done
@@ -220,216 +197,190 @@ CF() {
 alias CAMERA_FEATURE=CF
 
 
+GET_PROP_PATHS()
+{
+    local FIRMWARE_DIRECTORY="$1"
+    local PARTITION_NAME="$2"
 
-
-#
-# Usage: _GET_PROP_PATHS <DIRECTORY> <partition>
-# Internal helper function to generate possible property file paths for a specific partition.
-#
-_GET_PROP_PATHS() {
-    local DIRECTORY="$1"
-    local partition="$2"
-
-    case "$partition" in
-        "system")      echo "${DIRECTORY}/system/system/build.prop" ;;
-        "vendor")      echo "${DIRECTORY}/vendor/build.prop" "${DIRECTORY}/vendor/etc/build.prop" "${DIRECTORY}/vendor/default.prop" ;;
-        "product")     echo "${DIRECTORY}/product/etc/build.prop" "${DIRECTORY}/product/build.prop" ;;
-        "system_ext")  echo "${DIRECTORY}/system_ext/etc/build.prop" "${DIRECTORY}/system/system/system_ext/etc/build.prop" ;;
-        "odm")         echo "${DIRECTORY}/odm/etc/build.prop" ;;
-        "vendor_dlkm") echo "${DIRECTORY}/vendor_dlkm/etc/build.prop" "${DIRECTORY}/vendor/vendor_dlkm/etc/build.prop" ;;
-        "odm_dlkm")    echo "${DIRECTORY}/vendor/odm_dlkm/etc/build.prop" ;;
-        "system_dlkm") echo "${DIRECTORY}/system_dlkm/etc/build.prop" "${DIRECTORY}/system/system/system_dlkm/etc/build.prop" ;;
+    case "$PARTITION_NAME" in
+        "system")
+            echo "${FIRMWARE_DIRECTORY}/system/system/build.prop"
+            ;;
+        "vendor")
+            echo "${FIRMWARE_DIRECTORY}/vendor/build.prop"
+            echo "${FIRMWARE_DIRECTORY}/vendor/etc/build.prop"
+            echo "${FIRMWARE_DIRECTORY}/vendor/default.prop"
+            ;;
+        "product")
+            echo "${FIRMWARE_DIRECTORY}/product/etc/build.prop"
+            echo "${FIRMWARE_DIRECTORY}/product/build.prop"
+            ;;
+        "system_ext")
+            echo "${FIRMWARE_DIRECTORY}/system_ext/etc/build.prop"
+            echo "${FIRMWARE_DIRECTORY}/system/system/system_ext/etc/build.prop"
+            ;;
+        "odm")
+            echo "${FIRMWARE_DIRECTORY}/odm/etc/build.prop"
+            ;;
+        "vendor_dlkm")
+            echo "${FIRMWARE_DIRECTORY}/vendor_dlkm/etc/build.prop"
+            echo "${FIRMWARE_DIRECTORY}/vendor/vendor_dlkm/etc/build.prop"
+            ;;
+        "odm_dlkm")
+            echo "${FIRMWARE_DIRECTORY}/vendor/odm_dlkm/etc/build.prop"
+            ;;
+        "system_dlkm")
+            echo "${FIRMWARE_DIRECTORY}/system_dlkm/etc/build.prop"
+            echo "${FIRMWARE_DIRECTORY}/system/system/system_dlkm/etc/build.prop"
+            ;;
     esac
 }
 
-#
-# Usage: _RESOLVE_PROP_FILE <DIRECTORY> <partition>
-# Internal helper function to locate and return the high potential `build.prop` file in a specific partition.
-#
-_RESOLVE_PROP_FILE() {
-    local DIRECTORY="$1"
-    local partition="$2"
+RESOLVE_PROP_FILE()
+{
+    local FIRMWARE_DIRECTORY="$1"
+    local PARTITION_NAME="$2"
 
-    for file in $(_GET_PROP_PATHS "$DIRECTORY" "$partition"); do
-        if [[ -f "$file" ]]; then
-            echo "$file"
+    for PROP_FILE_PATH in $(GET_PROP_PATHS "$FIRMWARE_DIRECTORY" "$PARTITION_NAME"); do
+        if [[ -f "$PROP_FILE_PATH" ]]; then
+            echo "$PROP_FILE_PATH"
             return 0
         fi
     done
     return 1
 }
 
-#
-# Usage: _FIND_PROP_IN_PARTITION <DIRECTORY> <partition> <prop_name>
-# Internal helper function to locate and return the high potential `build.prop` file in a selected partition.
-#
-_FIND_PROP_IN_PARTITION() {
-    local DIRECTORY="$1"
-    local partition="$2"
-    local prop_name="$3"
+FIND_PROP_IN_PARTITION()
+{
+    local FIRMWARE_DIRECTORY="$1"
+    local PARTITION_NAME="$2"
+    local PROPERTY_NAME="$3"
 
-    for file in $(_GET_PROP_PATHS "$DIRECTORY" "$partition"); do
-        if [[ -f "$file" ]] && grep -q -E "^${prop_name}=" "$file"; then
-            echo "$file"
+    for PROP_FILE_PATH in $(GET_PROP_PATHS "$FIRMWARE_DIRECTORY" "$PARTITION_NAME"); do
+        if [[ -f "$PROP_FILE_PATH" ]] && grep -q -E "^${PROPERTY_NAME}=" "$PROP_FILE_PATH"; then
+            echo "$PROP_FILE_PATH"
             return 0
         fi
     done
     return 1
 }
 
-#
-# Adds, updates, or deletes entries in a `build.prop` file from a specific partition.
-# Usage: BPROP <partition> <tag> <value>
-# To delete a property: BPROP <partition> <tag> ""
-#
+BPROP()
+{
+    local PARTITION_NAME="$1"
+    local PROPERTY_TAG="$2"
+    local PROPERTY_VALUE="$3"
 
-BPROP() {
-    local partition="$1"
-    local tag="$2"
-    local value="$3"
+    local ASTROROM_MARKER="# Added by AstroROM [scripts/Internal/props.sh]"
+    local END_OF_FILE_MARKER="# end of file"
+    local RESOLVED_PROP_FILE
 
-
-    local ASTRO_MARKER="# Added by AstroROM [scripts/Internal/props.sh]"
-    local END_MARKER="# end of file"
-    local prop_file
-
-    if [[ -z "$partition" || -z "$tag" ]]; then
+    if [[ -z "$PARTITION_NAME" || -z "$PROPERTY_TAG" ]]; then
         ERROR_EXIT "BPROP: Partition and Tag are required."
         return 1
     fi
 
-
-    if ! prop_file=$(_FIND_PROP_IN_PARTITION "$WORKSPACE" "$partition" "$tag"); then
-
-        prop_file=$(_RESOLVE_PROP_FILE "$WORKSPACE" "$partition")
+    if ! RESOLVED_PROP_FILE=$(FIND_PROP_IN_PARTITION "$WORKSPACE" "$PARTITION_NAME" "$PROPERTY_TAG"); then
+        RESOLVED_PROP_FILE=$(RESOLVE_PROP_FILE "$WORKSPACE" "$PARTITION_NAME")
     fi
 
-
-    if [[ -z "$prop_file" || ! -f "$prop_file" ]]; then
-        LOG_INFO "Cannot set property.No build.prop found for partition '$partition' . Skipping ${tag}."
+    if [[ -z "$RESOLVED_PROP_FILE" || ! -f "$RESOLVED_PROP_FILE" ]]; then
+        LOG_INFO "Cannot set property. No build.prop found for partition '${COLOR_YELLOW}${PARTITION_NAME}${COLOR_RESET}'. Skipping ${COLOR_GRAY}${PROPERTY_TAG}${COLOR_RESET}"
         return 0
     fi
 
+    local TEMP_PROP_FILE
+    TEMP_PROP_FILE=$(mktemp)
+    cp "$RESOLVED_PROP_FILE" "$TEMP_PROP_FILE"
 
-    local tmp_file
-    tmp_file=$(mktemp)
-    cp "$prop_file" "$tmp_file"
-
-
-    if [[ -z "$value" ]]; then
-        if grep -q "^${tag}=" "$tmp_file"; then
-            sed -i "/^${tag}=/d" "$tmp_file"
-            LOG "Deleted property from ${partition}: ${tag}"
+    if [[ -z "$PROPERTY_VALUE" ]]; then
+        if grep -q "^${PROPERTY_TAG}=" "$TEMP_PROP_FILE"; then
+            sed -i "/^${PROPERTY_TAG}=/d" "$TEMP_PROP_FILE"
+            LOG_INFO "Deleted property from ${COLOR_YELLOW}${PARTITION_NAME}${COLOR_RESET}: ${COLOR_GRAY}${PROPERTY_TAG}${COLOR_RESET}"
         else
-            LOG_INFO "Property not found in ${partition}: ${tag} (Nothing to delete)."
+            LOG_INFO "Property not found in ${COLOR_YELLOW}${PARTITION_NAME}${COLOR_RESET}: ${COLOR_GRAY}${PROPERTY_TAG}${COLOR_RESET} (Nothing to delete)"
         fi
 
-
-    elif grep -q "^${tag}=" "$tmp_file"; then
-
-        sed -i "s|^${tag}=.*|${tag}=${value}|" "$tmp_file"
-        LOG_INFO "Updated existing property in ${partition}: ${tag}=${value}"
+    elif grep -q "^${PROPERTY_TAG}=" "$TEMP_PROP_FILE"; then
+        sed -i "s|^${PROPERTY_TAG}=.*|${PROPERTY_TAG}=${PROPERTY_VALUE}|" "$TEMP_PROP_FILE"
+        LOG_INFO "Updated property in ${COLOR_YELLOW}${PARTITION_NAME}${COLOR_RESET}: ${COLOR_CYAN}${PROPERTY_TAG}${COLOR_RESET}=${COLOR_GREEN}${PROPERTY_VALUE}${COLOR_RESET}"
 
     else
+        local INSERT_CONTENT=""
 
-        local insert_content=""
-
-
-        if ! grep -Fq "$ASTRO_MARKER" "$tmp_file"; then
-            insert_content="${ASTRO_MARKER}\n"
+        if ! grep -Fq "$ASTROROM_MARKER" "$TEMP_PROP_FILE"; then
+            INSERT_CONTENT="${ASTROROM_MARKER}\n"
         fi
 
-        insert_content="${insert_content}${tag}=${value}"
+        INSERT_CONTENT="${INSERT_CONTENT}${PROPERTY_TAG}=${PROPERTY_VALUE}"
 
-
-        if grep -Fq "$END_MARKER" "$tmp_file"; then
-
-            local end_footer
-            end_footer=$(echo "$END_MARKER" | sed 's/[]\/$*.^[]/\\&/g')
-
-
-            sed -i "/$end_footer/i $insert_content" "$tmp_file"
+        if grep -Fq "$END_OF_FILE_MARKER" "$TEMP_PROP_FILE"; then
+            local ESCAPED_MARKER
+            ESCAPED_MARKER=$(echo "$END_OF_FILE_MARKER" | sed 's/[]\/$*.^[]/\\&/g')
+            sed -i "/$ESCAPED_MARKER/i $INSERT_CONTENT" "$TEMP_PROP_FILE"
         else
-
-            echo -e "$insert_content" >> "$tmp_file"
+            echo -e "$INSERT_CONTENT" >> "$TEMP_PROP_FILE"
         fi
 
-        LOG "Added new property to ${partition}: ${tag}=${value}"
+        LOG_INFO "Added new property to ${COLOR_YELLOW}${PARTITION_NAME}${COLOR_RESET}: ${COLOR_CYAN}${PROPERTY_TAG}${COLOR_RESET}=${COLOR_GREEN}${PROPERTY_VALUE}${COLOR_RESET}"
     fi
 
-
-if ! mv -f "$tmp_file" "$prop_file"; then
-    rm -f "$tmp_file"
-       ERROR_EXIT "Failed to write changes to $prop_file"
-    return 1
-fi
-
+    if ! mv -f "$TEMP_PROP_FILE" "$RESOLVED_PROP_FILE"; then
+        rm -f "$TEMP_PROP_FILE"
+        ERROR_EXIT "Failed to write changes to $RESOLVED_PROP_FILE"
+        return 1
+    fi
 }
 
-#
-# Usage: BPROP_IF_DIFF <FW_TYPE> <SOURCE_PARTITION> <tag> <TARGET_PARTITION>
-# Add property value from one firmware to another
-# If the property already exists in workspace, it will be updated.
-#
-BPROP_IF_DIFF() {
-    local FW_TYPE="$1"
-    local SOURCE_PARTITION="$2"
-    local PROP_TAG="$3"
-    local TARGET_PARTITION="${4:-$SOURCE_PARTITION}"
+BPROP_IF_DIFF()
+{
+    local SOURCE_FIRMWARE_TYPE="$1"
+    local SOURCE_PARTITION_NAME="$2"
+    local PROPERTY_TAG="$3"
+    local TARGET_PARTITION_NAME="${4:-$SOURCE_PARTITION_NAME}"
 
-    local source_fs_dir
-    source_fs_dir=$(GET_FW_DIR "$FW_TYPE") || return 1
+    local SOURCE_FIRMWARE_DIR
+    SOURCE_FIRMWARE_DIR=$(GET_FW_DIR "$SOURCE_FIRMWARE_TYPE") || return 1
 
-    local src_prop_path
-    src_prop_path=$(_RESOLVE_PROP_FILE "$source_fs_dir" "$SOURCE_PARTITION")
+    local SOURCE_PROP_FILE_PATH
+    SOURCE_PROP_FILE_PATH=$(RESOLVE_PROP_FILE "$SOURCE_FIRMWARE_DIR" "$SOURCE_PARTITION_NAME")
 
-    if [[ -z "$src_prop_path" ]]; then
-        LOG_WARN "Source prop file not found for partition '$SOURCE_PARTITION' in '$FW_TYPE'."
+    if [[ -z "$SOURCE_PROP_FILE_PATH" ]]; then
+        LOG_WARN "Source prop file not found for partition '${COLOR_YELLOW}${SOURCE_PARTITION_NAME}${COLOR_RESET}' in '${SOURCE_FIRMWARE_TYPE}'."
         return 0
     fi
 
-    local prop_value
-    prop_value=$(grep -m 1 -E "^${PROP_TAG}=" "$src_prop_path" | cut -d '=' -f2- | tr -d '\r')
+    local PROPERTY_VALUE
+    PROPERTY_VALUE=$(grep -m 1 -E "^${PROPERTY_TAG}=" "$SOURCE_PROP_FILE_PATH" | cut -d '=' -f2- | tr -d '\r')
 
-    if [[ -z "$prop_value" ]]; then
-        LOG_WARN "Property '$PROP_TAG' not found in '$src_prop_path'."
+    if [[ -z "$PROPERTY_VALUE" ]]; then
+        LOG_WARN "Property '${COLOR_CYAN}${PROPERTY_TAG}${COLOR_RESET}' not found in '${SOURCE_PROP_FILE_PATH}'."
         return 0
     fi
 
-    BPROP "$TARGET_PARTITION" "$PROP_TAG" "$prop_value"
+    BPROP "$TARGET_PARTITION_NAME" "$PROPERTY_TAG" "$PROPERTY_VALUE"
 }
 
+GET_PROP()
+{
+    local PARTITION_NAME="$1"
+    local PROPERTY_NAME="$2"
+    local SOURCE_FIRMWARE_TYPE="${3:-}"
 
-
-#
-# Usage: GET_PROP <partition> <prop_name>
-# Retrieves the value of a specified property from the specified partition's `build.prop` file. Returns if not found.
-#
-GET_PROP() {
-    local partition="$1"
-    local prop_name="$2"
-    local source_type="${3:-}"
-
-    local prop_file
-    if [[ -n "$source_type" ]]; then
-
-        local workdir_path
-        workdir_path=$(GET_FW_DIR "$source_type") || return 1
-        prop_file=$(_RESOLVE_PROP_FILE "$workdir_path" "$partition") || return 1
+    local RESOLVED_PROP_FILE
+    if [[ -n "$SOURCE_FIRMWARE_TYPE" ]]; then
+        local FIRMWARE_WORKSPACE_PATH
+        FIRMWARE_WORKSPACE_PATH=$(GET_FW_DIR "$SOURCE_FIRMWARE_TYPE") || return 1
+        RESOLVED_PROP_FILE=$(RESOLVE_PROP_FILE "$FIRMWARE_WORKSPACE_PATH" "$PARTITION_NAME") || return 1
     else
-
-        prop_file=$(_RESOLVE_PROP_FILE "$WORKSPACE" "$partition")
-        [[ -z "$prop_file" ]] && return 1
+        RESOLVED_PROP_FILE=$(RESOLVE_PROP_FILE "$WORKSPACE" "$PARTITION_NAME")
+        [[ -z "$RESOLVED_PROP_FILE" ]] && return 1
     fi
 
-    # Check if the property exists in the file
-    if ! grep -q "^${prop_name}=" "$prop_file"; then
+    if ! grep -q "^${PROPERTY_NAME}=" "$RESOLVED_PROP_FILE"; then
         return 1
     fi
 
-    grep "^${prop_name}=" "$prop_file" | cut -d'=' -f2- | tr -d '\r'
+    grep "^${PROPERTY_NAME}=" "$RESOLVED_PROP_FILE" | cut -d'=' -f2- | tr -d '\r'
 }
-
-
-
-
+# ]

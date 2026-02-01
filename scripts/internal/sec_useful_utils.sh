@@ -52,7 +52,7 @@ NUKE_BLOAT() {
 
 
                     if rm -rf "$folder" 2>/dev/null; then
-                    _UPDATE_LOG \
+                    UPDATE_LOG_LINE \
                         "Nuked ${name}..."
                     else
                         ERROR_EXIT "Failed to nuke ${name}"

@@ -1,5 +1,5 @@
 #!/bin/bash
-# 
+#
 #  Copyright (c) 2025 Sameer Al Sahab
 #  Licensed under the MIT License. See LICENSE file for details.
 #
@@ -13,78 +13,10 @@
 #  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 #  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 #  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-# 
+#
 
-
-VALIDATE_DEVICE_VARS() {
-    local missing_vars=()
-    local error_messages=(
-        ["CODENAME"]="A specific device codename must be defined."
-        ["MODEL"]="The main firmware model identifier (\$MODEL)."
-        ["STOCK_MODEL"]="The target stock firmware model identifier (\$STOCK_MODEL)."
-        ["FILESYSTEM"]="The desired target filesystem type (\$FILESYSTEM) must needed for repack images"
-    )
-
-    for var_name in "${!error_messages[@]}"; do
-        if [[ -z "${!var_name}" ]]; then
-            missing_vars+=("$var_name:${error_messages[$var_name]}")
-        fi
-    done
-
-    if [[ ${#missing_vars[@]} -gt 0 ]]; then
-        LOG "Cannot continue. Missing required environment variables:"
-        for entry in "${missing_vars[@]}"; do
-            IFS=':' read -r var_name error_msg <<< "$entry"
-            echo -e "  ${RED}✗${NC} ${var_name}: ${error_msg}"
-        done
-        echo
-        ERROR_EXIT "Critical configuration parameters are not given. Aborting build environment."
-        return 1
-    fi
-    
-    return 0
-}
-
-
-SETUP_DEVICE_ENV() {
-    LOG_BEGIN "Setting up Device environment"
-
-
-    if ! VALIDATE_DEVICE_VARS; then
-        LOG_WARN "Failed to validate device environment variables."
-        return 1
-    fi
-
-
-    echo -e "  ${BLUE}DEVICE INFO:${NC}"
-    echo -e "    -> Device:               ${BOLD}${MODEL_NAME}${NC}"
-    echo -e "    -> Codename:             ${BOLD}${CODENAME}${NC}"
-    echo -e "    -> Stock Model:          ${BOLD}${STOCK_MODEL}${NC}"
-    echo -e
-    echo -e "    -> Source Model:         ${BOLD}${MODEL}${NC}"
-    echo -e "    -> Extra Model:          ${EXTRA_MODEL:-[None]}"
-    echo -e
-    echo -e "  ${BLUE}BUILD PARAMETERS:${NC}"
-    echo -e "    -> Target Filesystem:    ${FILESYSTEM}"
-    echo -e "    -> Debug Mode:           ${DEBUG_BUILD}"
-    
-    # TODO : Add more if possible in future.
-    echo -e ""
-
-    # Skip user input in CI environments
-    if ! IS_GITHUB_ACTIONS; then
-        echo -e "Imported config. Press ${GREEN}ENTER${NC} to proceed with the build, or ${RED}Ctrl+C${NC} to abort."
-        read -r user_input
-    else
-        LOG_INFO "CI environment detected, proceeding with build automatically."
-    fi
-
-    INIT_BUILD_ENV
-}
-
-
-# Format: "DebianPkgName|ArchPkgName|PrettyName|Critical(true/false)"
-dependencies_config=(
+# [
+DEPENDENCY_CONFIG=(
     "openjdk-17-jdk|jdk17-openjdk|Java 17+ (Java is required for APK/JAR patching)|true"
     "python3|python|Python 3 (For Python modules)|true"
     "xmlstarlet|xmlstarlet|XML manipulation (Editing xml files)|true"
@@ -95,19 +27,80 @@ dependencies_config=(
     "e2fsprogs|e2fsprogs|EXT4 filesystem tools|true"
     "attr|attr|xattr (SELinux configs)|true"
     "zipalign|android-sdk-build-tools|Zipalign (APKs alignment)|true"
-    "f2fs-tools|f2fs-tools|(Tools for F2FS)|true" 
-	"nodejs|nodejs|Node.js (JS-based utilities)|true"
-	"jq|jq|(For JQ)|true"
-	"ffmpeg|ffmpeg|(Video conversion)|true"
-	"webp|libwebp-utils|(WEBP conversion)|true"
-	"acl|acl|grants regular user permissions|true"
+    "f2fs-tools|f2fs-tools|(Tools for F2FS)|true"
+    "nodejs|nodejs|Node.js (JS-based utilities)|true"
+    "jq|jq|(For JQ)|true"
+    "ffmpeg|ffmpeg|(Video conversion)|true"
+    "webp|libwebp-utils|(WEBP conversion)|true"
+    "acl|acl|grants regular user permissions|true"
 )
 
-DISTRO_TYPE=""
+DETECTED_DISTRO_TYPE=""
 
-# Detect the Linux distribution type
-# Reference: https://www.freedesktop.org/software/systemd/man/os-release.html
-GET_DISTRO_TYPE() {
+VALIDATE_DEVICE_VARS()
+{
+    local MISSING_VARIABLES=()
+    local ERROR_MESSAGES=(
+        ["CODENAME"]="A specific device codename must be defined."
+        ["MODEL"]="The main firmware model identifier (\$MODEL)."
+        ["STOCK_MODEL"]="The target stock firmware model identifier (\$STOCK_MODEL)."
+        ["FILESYSTEM"]="The desired target filesystem type (\$FILESYSTEM) must needed for repack images"
+    )
+
+    for VARIABLE_NAME in "${!ERROR_MESSAGES[@]}"; do
+        if [[ -z "${!VARIABLE_NAME}" ]]; then
+            MISSING_VARIABLES+=("$VARIABLE_NAME:${ERROR_MESSAGES[$VARIABLE_NAME]}")
+        fi
+    done
+
+    if [[ ${#MISSING_VARIABLES[@]} -gt 0 ]]; then
+        LOG "Cannot continue. Missing required environment variables:"
+        for VARIABLE_ENTRY in "${MISSING_VARIABLES[@]}"; do
+            IFS=':' read -r VARIABLE_NAME ERROR_MESSAGE <<< "$VARIABLE_ENTRY"
+            echo -e "  ${COLOR_RED}✗${COLOR_RESET} ${VARIABLE_NAME}: ${ERROR_MESSAGE}"
+        done
+        echo
+        ERROR_EXIT "Critical configuration parameters are not given. Aborting build environment."
+        return 1
+    fi
+
+    return 0
+}
+
+SETUP_DEVICE_ENV()
+{
+    LOG_BEGIN "Setting up Device environment"
+
+    if ! VALIDATE_DEVICE_VARS; then
+        LOG_WARN "Failed to validate device environment variables."
+        return 1
+    fi
+
+    echo -e "  ${COLOR_BLUE}DEVICE INFO:${COLOR_RESET}"
+    echo -e "    → Device:               ${TEXT_BOLD}${MODEL_NAME}${COLOR_RESET}"
+    echo -e "    → Codename:             ${TEXT_BOLD}${CODENAME}${COLOR_RESET}"
+    echo -e "    → Stock Model:          ${TEXT_BOLD}${STOCK_MODEL}${COLOR_RESET}"
+    echo -e
+    echo -e "    → Source Model:         ${TEXT_BOLD}${MODEL}${COLOR_RESET}"
+    echo -e "    → Extra Model:          ${EXTRA_MODEL:-[None]}"
+    echo -e
+    echo -e "  ${COLOR_BLUE}BUILD PARAMETERS:${COLOR_RESET}"
+    echo -e "    → Target Filesystem:    ${FILESYSTEM}"
+    echo -e "    → Debug Mode:           ${DEBUG_BUILD}"
+    echo -e ""
+
+    if ! IS_GITHUB_ACTIONS; then
+        echo -e "Imported config. Press ${COLOR_GREEN}ENTER${COLOR_RESET} to proceed with the build, or ${COLOR_RED}Ctrl+C${COLOR_RESET} to abort."
+        read -r USER_CONFIRMATION
+    else
+        LOG_INFO "CI environment detected, proceeding with build automatically."
+    fi
+
+    INIT_BUILD_ENV
+}
+
+GET_DISTRO_TYPE()
+{
     if [ -f /etc/os-release ]; then
         . /etc/os-release
         if [[ "$ID" == "arch" || "$ID_LIKE" == "arch" ]]; then
@@ -128,126 +121,93 @@ GET_DISTRO_TYPE() {
     fi
 }
 
-# Check and install all required dependencies
-CHECK_ALL_DEPENDENCIES() {
+CHECK_ALL_DEPENDENCIES()
+{
+    if find "$PREBUILTS" -type f ! -executable | grep -q .; then
+        find "$PREBUILTS" -type f ! -executable -exec chmod +x {} + 2>/dev/null || true
+    fi
 
-if find "$PREBUILTS" -type f ! -executable | grep -q .; then
-    find "$PREBUILTS" -type f ! -executable -exec chmod +x {} + 2>/dev/null || true
-fi
+    DETECTED_DISTRO_TYPE=$(GET_DISTRO_TYPE)
 
-
-    DISTRO_TYPE=$(GET_DISTRO_TYPE)
-
-
-    if [[ "$DISTRO_TYPE" == "unknown" ]]; then
+    if [[ "$DETECTED_DISTRO_TYPE" == "unknown" ]]; then
         ERROR_EXIT "Unsupported operating system. Cannot auto-install dependencies."
     fi
 
-    LOG_BEGIN "System is $DISTRO_TYPE. Verifying dependencies..."
+    LOG_BEGIN "System is $DETECTED_DISTRO_TYPE. Verifying dependencies..."
 
-    local all_installed=true
-    local pkg_string pretty_name deb_pkg arch_pkg pkg_name critical
+    local ALL_PACKAGES_INSTALLED=true
+    local PACKAGE_CONFIG_STRING PACKAGE_DISPLAY_NAME DEBIAN_PACKAGE_NAME ARCH_PACKAGE_NAME RESOLVED_PACKAGE_NAME IS_CRITICAL_PACKAGE
 
-    if [[ "$DISTRO_TYPE" == "debian" ]]; then
-        SUDO apt-get update &>/dev/null
+    if [[ "$DETECTED_DISTRO_TYPE" == "debian" ]]; then
+        sudo apt-get update &>/dev/null
     fi
 
-    for pkg_string in "${dependencies_config[@]}"; do
-        IFS='|' read -r deb_pkg arch_pkg pretty_name critical <<< "$pkg_string"
+    for PACKAGE_CONFIG_STRING in "${DEPENDENCY_CONFIG[@]}"; do
+        IFS='|' read -r DEBIAN_PACKAGE_NAME ARCH_PACKAGE_NAME PACKAGE_DISPLAY_NAME IS_CRITICAL_PACKAGE <<< "$PACKAGE_CONFIG_STRING"
 
-        if [[ "$DISTRO_TYPE" == "arch" ]]; then
-            pkg_name="$arch_pkg"
+        if [[ "$DETECTED_DISTRO_TYPE" == "arch" ]]; then
+            RESOLVED_PACKAGE_NAME="$ARCH_PACKAGE_NAME"
         else
-            pkg_name="$deb_pkg"
+            RESOLVED_PACKAGE_NAME="$DEBIAN_PACKAGE_NAME"
         fi
 
-        if ! CHECK_DEPENDENCY "$pkg_name" "$pretty_name" "$critical"; then
-            if [[ "$critical" == "true" ]]; then
-                all_installed=false
+        if ! CHECK_DEPENDENCY "$RESOLVED_PACKAGE_NAME" "$PACKAGE_DISPLAY_NAME" "$IS_CRITICAL_PACKAGE"; then
+            if [[ "$IS_CRITICAL_PACKAGE" == "true" ]]; then
+                ALL_PACKAGES_INSTALLED=false
             fi
         fi
     done
 
-    if "$all_installed"; then
+    if "$ALL_PACKAGES_INSTALLED"; then
         LOG_END "All dependencies are installed and ready."
     else
         ERROR_EXIT "Critical dependencies failed to install. Check your internet or package manager."
     fi
 }
 
+CHECK_DEPENDENCY()
+{
+    local PACKAGE_NAME="$1"
+    local PACKAGE_DISPLAY_NAME="${2:-$PACKAGE_NAME}"
+    local IS_CRITICAL_PACKAGE="${3:-false}"
 
-CHECK_DEPENDENCY() {
-    local pkg_name="$1"
-    local pretty_name="${2:-$pkg_name}"
-    local critical="${3:-false}"
-
-
-    if [[ "$DISTRO_TYPE" == "arch" ]]; then
-        pacman -Q "$pkg_name" &>/dev/null && return 0
+    if [[ "$DETECTED_DISTRO_TYPE" == "arch" ]]; then
+        pacman -Q "$PACKAGE_NAME" &>/dev/null && return 0
     else
-        dpkg -s "$pkg_name" &>/dev/null && return 0
+        dpkg -s "$PACKAGE_NAME" &>/dev/null && return 0
     fi
 
-    LOG_BEGIN "Installing dependency: $pretty_name..."
-    local install_success=false
+    LOG_BEGIN "Installing dependency: $PACKAGE_DISPLAY_NAME..."
+    local INSTALLATION_SUCCESSFUL=false
 
-    # Arch
-    if [[ "$DISTRO_TYPE" == "arch" ]]; then
-        # Try pacman first (Official Repos)
-        if SUDO pacman -S --noconfirm --needed "$pkg_name" &>/dev/null; then
-            install_success=true
+    if [[ "$DETECTED_DISTRO_TYPE" == "arch" ]]; then
+        if sudo pacman -S --noconfirm --needed "$PACKAGE_NAME" &>/dev/null; then
+            INSTALLATION_SUCCESSFUL=true
         else
-            # Try AUR helper if pacman fails
             if ! command -v yay &>/dev/null; then
-                SUDO pacman -S --noconfirm yay
+                sudo pacman -S --noconfirm yay
             fi
 
-            if SUDO -u "$(logname)" yay -S --noconfirm --needed --answerclean None --answerdiff None "$pkg_name" &>/dev/null; then
-                install_success=true
+            if sudo -u "$(logname)" yay -S --noconfirm --needed --answerclean None --answerdiff None "$PACKAGE_NAME" &>/dev/null; then
+                INSTALLATION_SUCCESSFUL=true
             fi
         fi
 
-    # Debian/Ubuntu
-    elif [[ "$DISTRO_TYPE" == "debian" ]]; then
-        if SUDO apt-get install -y "$pkg_name" &>/dev/null; then
-            install_success=true
+    elif [[ "$DETECTED_DISTRO_TYPE" == "debian" ]]; then
+        if sudo apt-get install -y "$PACKAGE_NAME" &>/dev/null; then
+            INSTALLATION_SUCCESSFUL=true
         fi
     fi
 
-
-    if $install_success; then
+    if $INSTALLATION_SUCCESSFUL; then
         return 0
     else
-        if [[ "$critical" == "true" ]]; then
-            ERROR_EXIT "Failed to install required dependency: $pretty_name ($pkg_name)"
+        if [[ "$IS_CRITICAL_PACKAGE" == "true" ]]; then
+            ERROR_EXIT "Failed to install required dependency: $PACKAGE_DISPLAY_NAME ($PACKAGE_NAME)"
         else
-            LOG_WARN "Failed to install optional dependency: $pretty_name"
+            LOG_WARN "Failed to install optional dependency: $PACKAGE_DISPLAY_NAME"
             return 1
         fi
     fi
 }
-
-
-SUDO() {
-    # Already root 
-    if [[ $EUID -eq 0 ]]; then
-        "$@"
-        return
-    fi
-
-    # Check if sudo auth is cached
-    if ! sudo -n true 2>/dev/null; then
-        echo
-        LOG_INFO "Root access is required for this operation."
-		echo
-
-        # Ask once
-        sudo -v || {
-            ERROR_EXIT "Sudo authentication failed. Aborting."
-        }
-    fi
-
-    # Run command with sudo
-    sudo "$@"
-}
-
+# ]

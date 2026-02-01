@@ -1,18 +1,36 @@
+#!/bin/bash
 #
-# The following environment variables are automatically generated or
-# consumed during device configuration generation.
+#  Copyright (c) 2025 Sameer Al Sahab
+#  Licensed under the MIT License. See LICENSE file for details.
 #
-# These variables describe hardware capabilities and firmware properties
-# of the TARGET (stock) device.
+#  Permission is hereby granted, free of charge, to any person obtaining a copy
+#  of this software and associated documentation files (the "Software"), to deal
+#  in the Software without restriction, including without limitation the rights
+#  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#  copies of the Software, and to permit persons to whom the Software is
+#  furnished to do so, subject to the following conditions:
 #
-# Unless explicitly overridden by a device configuration file, all values
-# are detected automatically from the stock firmware and the given source firmware.
-# If variables are already declared in config file , it will not overwrite them.
+#  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 #
 
-GENERATE_CONFIG() {
-    # Format: "XML_TAG_NAME" or "XML_TAG_NAME:CUSTOM_VAR_SUFFIX"
-    local CONFIG_FEATURES=(
+# [
+#
+# The following environment variables are automatically generated or consumed
+# during device configuration generation.
+#
+# These variables describe hardware capabilities and firmware properties of
+# the TARGET (stock) device.
+#
+# Unless explicitly overridden by a device configuration file, all values are
+# detected automatically from the stock firmware and the given source firmware.
+# If variables are already declared in config file, it will not overwrite them.
+#
+
+GENERATE_CONFIG()
+{   # Format: "XML_TAG_NAME" or "XML_TAG_NAME:CUSTOM_VAR_SUFFIX"
+    local FEATURE_CONFIG_MAP=(
         "LCD_CONFIG_HFR_MODE:DISPLAY_HFR_MODE"
         "COMMON_CONFIG_MDNIE_MODE:MDNIE_MODE"
         "LCD_SUPPORT_AMOLED_DISPLAY:HAVE_AMOLED_DISPLAY"
@@ -25,148 +43,127 @@ GENERATE_CONFIG() {
         "SYSTEM_CONFIG_SIOP_POLICY_FILENAME:SIOP_POLICY_FILENAME"
     )
 
-
     # Format: "partition:property_name:CUSTOM_VAR_SUFFIX"
-    local CONFIG_PROPS=(
+    local PROPERTY_CONFIG_MAP=(
         "vendor:ro.vendor.build.version.release:FIRST_API_VERSION"
         "vendor:ro.vendor.build.version.sdk:FIRST_SDK_VERSION"
         "vendor:ro.vndk.version:VNDK_VERSION"
         "system:ro.product.system.device:SINGLE_SYSTEM_IMAGE"
     )
 
-   # Format: "partition:path/to/file:CUSTOM_VAR_SUFFIX"
-    local CONFIG_FILES=(
+    # Format: "partition:path/to/file:CUSTOM_VAR_SUFFIX"
+    local FILE_EXISTENCE_CONFIG_MAP=(
         "system:priv-app/AirCommand:HAVE_SPEN_SUPPORT"
         "system:priv-app/EsimKeyString:HAVE_ESIM_SUPPORT"
         "vendor:bin/hw/vendor.samsung.hardware.biometrics.face@2.0-service:HAVE_LEGACY_FACE_HAL"
     )
 
+    local CONFIG_ENTRY PARTITION_NAME FEATURE_KEY VARIABLE_SUFFIX
+    local SOURCE_VARIABLE_NAME DEVICE_VARIABLE_NAME
+    local SOURCE_VALUE DEVICE_VALUE
 
+    for CONFIG_ENTRY in "${FEATURE_CONFIG_MAP[@]}"; do
+        FEATURE_KEY="${CONFIG_ENTRY%%:*}"
+        VARIABLE_SUFFIX="${CONFIG_ENTRY#*:}"
+        [[ "$CONFIG_ENTRY" != *":"* ]] && VARIABLE_SUFFIX="$FEATURE_KEY"
 
-    local entry part key suffix
-    local var_source var_device val_source val_device
-    local src_dir stock_dir
+        SOURCE_VARIABLE_NAME="SOURCE_${VARIABLE_SUFFIX}"
+        DEVICE_VARIABLE_NAME="DEVICE_${VARIABLE_SUFFIX}"
 
-    for entry in "${CONFIG_FEATURES[@]}"; do
-        key="${entry%%:*}"
-        suffix="${entry#*:}"
-        [[ "$entry" != *":"* ]] && suffix="$key"
-
-        var_source="SOURCE_${suffix}"
-        var_device="DEVICE_${suffix}"
-
-        if [[ -z "${!var_source}" ]]; then
-            val_source=$(GET_FF_VAL "main" "$key")
-            # Convert Booleans
-            [[ "$val_source" == "TRUE" ]] && val_source="true"
-            [[ "$val_source" == "FALSE" ]] && val_source="false"
-            declare -g "$var_source"="$val_source"
+        if [[ -z "${!SOURCE_VARIABLE_NAME}" ]]; then
+            SOURCE_VALUE=$(GET_FF_VAL "main" "$FEATURE_KEY")
+            [[ "$SOURCE_VALUE" == "TRUE" ]] && SOURCE_VALUE="true"
+            [[ "$SOURCE_VALUE" == "FALSE" ]] && SOURCE_VALUE="false"
+            declare -g "$SOURCE_VARIABLE_NAME"="$SOURCE_VALUE"
         fi
 
-
-        if [[ -z "${!var_device}" ]]; then
-            val_device=$(GET_FF_VAL "stock" "$key")
-            # Convert Booleans
-            [[ "$val_device" == "TRUE" ]] && val_device="true"
-            [[ "$val_device" == "FALSE" ]] && val_device="false"
-            declare -g "$var_device"="$val_device"
+        if [[ -z "${!DEVICE_VARIABLE_NAME}" ]]; then
+            DEVICE_VALUE=$(GET_FF_VAL "stock" "$FEATURE_KEY")
+            [[ "$DEVICE_VALUE" == "TRUE" ]] && DEVICE_VALUE="true"
+            [[ "$DEVICE_VALUE" == "FALSE" ]] && DEVICE_VALUE="false"
+            declare -g "$DEVICE_VARIABLE_NAME"="$DEVICE_VALUE"
         fi
-
-
     done
 
+    for CONFIG_ENTRY in "${PROPERTY_CONFIG_MAP[@]}"; do
+        PARTITION_NAME=$(echo "$CONFIG_ENTRY" | cut -d':' -f1)
+        FEATURE_KEY=$(echo "$CONFIG_ENTRY" | cut -d':' -f2)
+        VARIABLE_SUFFIX=$(echo "$CONFIG_ENTRY" | cut -d':' -f3)
 
-    for entry in "${CONFIG_PROPS[@]}"; do
-        part=$(echo "$entry" | cut -d':' -f1)
-        key=$(echo "$entry" | cut -d':' -f2)
-        suffix=$(echo "$entry" | cut -d':' -f3)
+        SOURCE_VARIABLE_NAME="SOURCE_${VARIABLE_SUFFIX}"
+        DEVICE_VARIABLE_NAME="DEVICE_${VARIABLE_SUFFIX}"
 
-        var_source="SOURCE_${suffix}"
-        var_device="DEVICE_${suffix}"
-
-        if [[ -z "${!var_source}" ]]; then
-            val_source=$(GET_PROP "$part" "$key")
-            declare -g "$var_source"="$val_source"
+        if [[ -z "${!SOURCE_VARIABLE_NAME}" ]]; then
+            SOURCE_VALUE=$(GET_PROP "$PARTITION_NAME" "$FEATURE_KEY")
+            declare -g "$SOURCE_VARIABLE_NAME"="$SOURCE_VALUE"
         fi
 
-        if [[ -z "${!var_device}" ]]; then
-            val_device=$(GET_PROP "$part" "$key" "stock")
-            declare -g "$var_device"="$val_device"
+        if [[ -z "${!DEVICE_VARIABLE_NAME}" ]]; then
+            DEVICE_VALUE=$(GET_PROP "$PARTITION_NAME" "$FEATURE_KEY" "stock")
+            declare -g "$DEVICE_VARIABLE_NAME"="$DEVICE_VALUE"
         fi
-
     done
 
+    for CONFIG_ENTRY in "${FILE_EXISTENCE_CONFIG_MAP[@]}"; do
+        PARTITION_NAME="${CONFIG_ENTRY%%:*}"
+        FEATURE_KEY="${CONFIG_ENTRY#*:}"
+        FEATURE_KEY="${FEATURE_KEY%%:*}"
+        VARIABLE_SUFFIX="${CONFIG_ENTRY##*:}"
 
-    local main_fw_dir=$(GET_FW_DIR "main")
-    local stock_fw_dir="$WORKSPACE"
+        [[ "$CONFIG_ENTRY" != *":"* ]] && VARIABLE_SUFFIX="$FEATURE_KEY"
 
-for entry in "${CONFIG_FILES[@]}"; do
-    part="${entry%%:*}"
-    key="${entry#*:}"
-    key="${key%%:*}"
-    suffix="${entry##*:}"
+        SOURCE_VARIABLE_NAME="SOURCE_${VARIABLE_SUFFIX}"
+        DEVICE_VARIABLE_NAME="DEVICE_${VARIABLE_SUFFIX}"
 
-    [[ "$entry" != *":"* ]] && suffix="$key"
-
-    var_source="SOURCE_${suffix}"
-    var_device="DEVICE_${suffix}"
-
-    if [[ -z "${!var_source}" ]]; then
-        if EXISTS "main" "$part" "$key"; then
-            declare -g "$var_source"="true"
-        else
-            declare -g "$var_source"="false"
+        if [[ -z "${!SOURCE_VARIABLE_NAME}" ]]; then
+            if EXISTS "main" "$PARTITION_NAME" "$FEATURE_KEY"; then
+                declare -g "$SOURCE_VARIABLE_NAME"="true"
+            else
+                declare -g "$SOURCE_VARIABLE_NAME"="false"
+            fi
         fi
-    fi
 
-
-    if [[ -z "${!var_device}" ]]; then
-        if EXISTS "stock" "$part" "$key"; then
-            declare -g "$var_device"="true"
-        else
-            declare -g "$var_device"="false"
+        if [[ -z "${!DEVICE_VARIABLE_NAME}" ]]; then
+            if EXISTS "stock" "$PARTITION_NAME" "$FEATURE_KEY"; then
+                declare -g "$DEVICE_VARIABLE_NAME"="true"
+            else
+                declare -g "$DEVICE_VARIABLE_NAME"="false"
+            fi
         fi
-    fi
-
-done
-
-
+    done
 
     if [[ -n "$DEVICE_ACTUAL_MODEL" ]]; then
         DEVICE_MODEL="$DEVICE_ACTUAL_MODEL"
-      else
+    else
         DEVICE_MODEL="$STOCK_MODEL"
     fi
 
-export SEC_FLOATING_FEATURE_FILE="$WORKSPACE/system/system/etc/floating_feature.xml"
-export STOCK_SEC_FLOATING_FEATURE_FILE="$STOCK_FW/system/system/etc/floating_feature.xml"
+    export SEC_FLOATING_FEATURE_FILE="$WORKSPACE/system/system/etc/floating_feature.xml"
+    export STOCK_SEC_FLOATING_FEATURE_FILE="$STOCK_FW/system/system/etc/floating_feature.xml"
 
-
-if [[ -z "${SOURCE_HAVE_QHD_PANEL+x}" ]]; then
-    if grep -q "QHD" "$SEC_FLOATING_FEATURE_FILE"; then
-        SOURCE_HAVE_QHD_PANEL=true
-    else
-        SOURCE_HAVE_QHD_PANEL=false
+    if [[ -z "${SOURCE_HAVE_QHD_PANEL+x}" ]]; then
+        if grep -q "QHD" "$SEC_FLOATING_FEATURE_FILE"; then
+            SOURCE_HAVE_QHD_PANEL=true
+        else
+            SOURCE_HAVE_QHD_PANEL=false
+        fi
     fi
-fi
 
-
-if [[ -z "${DEVICE_HAVE_QHD_PANEL+x}" ]]; then
-    if grep -q "QHD" "$STOCK_SEC_FLOATING_FEATURE_FILE"; then
-        DEVICE_HAVE_QHD_PANEL=true
-    else
-        DEVICE_HAVE_QHD_PANEL=false
+    if [[ -z "${DEVICE_HAVE_QHD_PANEL+x}" ]]; then
+        if grep -q "QHD" "$STOCK_SEC_FLOATING_FEATURE_FILE"; then
+            DEVICE_HAVE_QHD_PANEL=true
+        else
+            DEVICE_HAVE_QHD_PANEL=false
+        fi
     fi
-fi
 
-
-if [[ -z "${DEVICE_HAVE_HIGH_REFRESH_RATE+x}" ]]; then
-    if (( ${DEVICE_DISPLAY_HFR_MODE:-0} > 0 )); then
-        DEVICE_HAVE_HIGH_REFRESH_RATE=true
-    else
-        DEVICE_HAVE_HIGH_REFRESH_RATE=false
+    if [[ -z "${DEVICE_HAVE_HIGH_REFRESH_RATE+x}" ]]; then
+        if (( ${DEVICE_DISPLAY_HFR_MODE:-0} > 0 )); then
+            DEVICE_HAVE_HIGH_REFRESH_RATE=true
+        else
+            DEVICE_HAVE_HIGH_REFRESH_RATE=false
+        fi
     fi
-fi
 
 # TODO : a way for check device has NPU or not. Usually flagship device have NPU related props in the xml.
 # We use this method until a new way found. For example : dm3q
@@ -192,19 +189,15 @@ if [ "$STOCK_MODEL" = "$MODEL" ]; then
     DEVICE_USE_STOCK_BASE=true
 fi
 
+    LOG_INFO "Automatic generated config:"
 
-LOG_INFO "Automatic generated config-"
-
-for var in $(compgen -v DEVICE_ | sort); do
-    printf '  %s=%s\n' "$var" "${!var}"
-done
-
-
+    for VARIABLE_NAME in $(compgen -v DEVICE_ | sort); do
+        printf '  %s=%s\n' "$VARIABLE_NAME" "${!VARIABLE_NAME}"
+    done
 }
 
 
-#
-# ----------------------------------------------------------------------
+# ============================================================================
 #
 #   DEVICE_DISPLAY_HFR_MODE
 #     Integer describing the display High Frame Rate (HFR) mode supported
@@ -226,10 +219,10 @@ done
 #     This variable is commonly used to enable or disable display-related
 #     features such as adaptive refresh rate, smooth animations.
 #
+#
 #   DEVICE_DISPLAY_REFRESH_RATE_VALUES_HZ
 #     String containing a comma-separated list of refresh rates (in Hz)
 #     supported by the device display.
-#
 #
 #
 #   DEVICE_DEFAULT_REFRESH_RATE
@@ -297,15 +290,13 @@ done
 #   DEVICE_ANDROID_VERSION
 #     String containing the Android version of the stock device firmware.
 #
+#   DEVICE_HAVE_NPU
+#     Boolean flag indicating the presence of a dedicated Neural Processing
+#     Unit (NPU) on the device.
 #
 #
 #   DEVICE_SDK_VERSION
 #     Integer containing the Android SDK (API) level of the stock firmware.
-#
-#
-#   DEVICE_HAVE_NPU
-#     Boolean flag indicating the presence of a dedicated Neural Processing
-#     Unit (NPU) on the device.
 #
 #
 #   DEVICE_VNDK_VERSION
@@ -315,6 +306,5 @@ done
 #     This value is critical for maintaining compatibility between system
 #     and vendor partitions under Project Treble.
 #
-# ----------------------------------------------------------------------
-
-
+# ============================================================================
+# ]

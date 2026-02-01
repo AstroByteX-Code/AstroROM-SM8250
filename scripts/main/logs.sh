@@ -15,217 +15,211 @@
 #  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 #
 
+# [
+LOG_LINE_WIDTH=80
+LOG_BASE_INDENT=2
+LOG_INDENT_STEP=2
 
-LOG_WIDTH=80
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
-BLUE='\033[0;34m'
-MAGENTA='\033[0;35m'
-CYAN='\033[0;36m'
-WHITE='\033[1;37m'
-GRAY='\033[0;90m'
-NC='\033[0m' 
-BOLD='\033[1m'
-DIM='\033[2m'
+# Colors
+COLOR_RED='\033[0;31m'
+COLOR_GREEN='\033[0;32m'
+COLOR_YELLOW='\033[0;33m'
+COLOR_BLUE='\033[0;34m'
+COLOR_CYAN='\033[0;36m'
+COLOR_WHITE='\033[1;37m'
+COLOR_GRAY='\033[0;90m'
+COLOR_RESET='\033[0m'
 
-INDENT_STEP=2
-BASE_INDENT=2
+# Text formatting
+TEXT_BOLD='\033[1m'
+TEXT_DIM='\033[2m'
 
-
-LOG_BEGIN() {
-    local TITLE="$1"
-    printf "%*s${YELLOW}-> %s${NC}\n\n" "$BASE_INDENT" "" "$TITLE"
+LOG_BEGIN()
+{
+    local MESSAGE_TITLE="$1"
+    printf "%*s${COLOR_BLUE}→ %b${COLOR_RESET}\n\n" "$LOG_BASE_INDENT" "" "$MESSAGE_TITLE"
 }
 
-
-LOG_END() {
-    local i=0
-    local indent
+LOG_END()
+{
+    local MESSAGE_INDEX=0
+    local MESSAGE_INDENT
 
     echo
-    for TITLE in "$@"; do
-        indent=$((BASE_INDENT + (i * INDENT_STEP)))
-        printf "%*s${GREEN}✔ %s${NC}\n" "$indent" "" "$TITLE"
-        ((i++))
+    for MESSAGE_TITLE in "$@"; do
+        MESSAGE_INDENT=$((LOG_BASE_INDENT + (MESSAGE_INDEX * LOG_INDENT_STEP)))
+        printf "%*s${COLOR_GREEN}✓ %b${COLOR_RESET}\n" "$MESSAGE_INDENT" "" "$MESSAGE_TITLE"
+        ((MESSAGE_INDEX++))
     done
     echo
 }
 
+ERROR_EXIT()
+{
+    local ERROR_MESSAGE="$1"
 
-
-
-# Display error TITLE and exit
-ERROR_EXIT() {
-    local TITLE="$1"
-
-    printf "${RED}> %s${NC}\n" "$TITLE"
-    exit
+    printf "${COLOR_RED}X %b${COLOR_RESET}\n" "$ERROR_MESSAGE"
+    exit 1
 }
 
-
-
-# Check if a command exists
-COMMAND_EXISTS() {
+COMMAND_EXISTS()
+{
     command -v "$1" >/dev/null 2>&1
 }
 
-
-# Get current timestamp in HH:MM:SS format
-_TIMESTAMP() {
+GET_TIMESTAMP()
+{
     date '+%H:%M:%S'
 }
 
+GET_DURATION()
+{
+    local START_TIME=$1
+    local END_TIME=$2
+    local DELTA_TIME=$((END_TIME - START_TIME))
+    local SECONDS=$((DELTA_TIME % 60))
+    local MINUTES=$(((DELTA_TIME / 60) % 60))
+    local HOURS=$((DELTA_TIME / 3600))
 
-_GET_DURATION() {
-    local start=$1
-    local end=$2
-    local dt=$((end - start))
-    local ds=$((dt % 60))
-    local dm=$(((dt / 60) % 60))
-    local dh=$((dt / 3600))
-    
-    if [ $dh -gt 0 ]; then
-        printf "%02d:%02d:%02d" $dh $dm $ds
+    if [ $HOURS -gt 0 ]; then
+        printf "%02d:%02d:%02d" $HOURS $MINUTES $SECONDS
     else
-        printf "%02d:%02d" $dm $ds
+        printf "%02d:%02d" $MINUTES $SECONDS
     fi
 }
 
+PRINT_DIVIDER()
+{
+    local DIVIDER_CHAR="${1:--}"
+    printf "${COLOR_GRAY}%*s${COLOR_RESET}\n" "$LOG_LINE_WIDTH" "" | tr ' ' "$DIVIDER_CHAR"
+}
 
-# Print a divider line with specified character
-_PRINT_DIVIDER() {
-    local char="${1:--}"
-    printf "${GRAY}%*s${NC}\n" "$LOG_WIDTH" "" | tr ' ' "$char"
+LOG_INFO()
+{
+    printf "    ${COLOR_CYAN}▪ %b${COLOR_RESET}\n" "$*"
+}
+
+LOG_WARN()
+{
+    printf "    ${COLOR_YELLOW}⚠ %b${COLOR_RESET}\n" "$*"
+}
+
+LOG()
+{
+    printf "%b\n" "$1"
 }
 
 
-
-
-LOG_INFO() {
-    printf "    ${CYAN}· %s${NC}\n" "$*"
-}
-
-
-LOG_WARN() {
-    printf "    ${YELLOW}! %s${NC}\n" "$*"
-}
-
-
-
-LOG() {
-    local TITLE="$1"
-    echo -e "$TITLE"
-}
-
-
-RUN_CMD() {
-    local DESCRIPTION="$1"
+RUN_CMD()
+{
+    local COMMAND_DESCRIPTION="$1"
     shift
-    local COMMAND="$*"
+    local COMMAND_STRING="$*"
 
-    local tmp_log spin='-\|/' i=0 pid
+    local TEMP_LOG_FILE SPINNER_CHARS SPINNER_INDEX COMMAND_PID
+    SPINNER_CHARS='-\|/'
+    SPINNER_INDEX=0
 
-    tmp_log=$(mktemp)
+    TEMP_LOG_FILE=$(mktemp)
 
+    printf "    ${COLOR_BLUE}▸${COLOR_RESET} %b... " "$COMMAND_DESCRIPTION"
 
-    printf "    ${BLUE}▶${NC} %s... " "$DESCRIPTION"
-
-    eval "$COMMAND" >"$tmp_log" 2>&1 &
-    pid=$!
+    eval "$COMMAND_STRING" >"$TEMP_LOG_FILE" 2>&1 &
+    COMMAND_PID=$!
 
     if IS_INTERACTIVE; then
         tput civis 2>/dev/null
-        while kill -0 "$pid" 2>/dev/null; do
-            i=$(( (i + 1) % 4 ))
-            printf "\b${CYAN}%s${NC}" "${spin:$i:1}"
+        while kill -0 "$COMMAND_PID" 2>/dev/null; do
+            SPINNER_INDEX=$(( (SPINNER_INDEX + 1) % 4 ))
+            printf "\b${COLOR_CYAN}%b${COLOR_RESET}" "${SPINNER_CHARS:$SPINNER_INDEX:1}"
             sleep 0.1
         done
         tput cnorm 2>/dev/null
     fi
 
-    wait "$pid"
-    local exit_code=$?
+    wait "$COMMAND_PID"
+    local COMMAND_EXIT_CODE=$?
 
-    if (( exit_code == 0 )); then
-        printf "\b${GREEN}[OK]${NC}\n"
-        rm -f "$tmp_log"
+    if (( COMMAND_EXIT_CODE == 0 )); then
+        printf "\b${COLOR_GREEN}[OK]${COLOR_RESET}\n"
+        rm -f "$TEMP_LOG_FILE"
     else
-        printf "\b${RED}[FAIL]${NC}\n\n"
+        printf "\b${COLOR_RED}[FAIL]${COLOR_RESET}\n\n"
 
-        printf "    ${RED}└─ ERROR OUTPUT:${NC}\n"
-        _PRINT_DIVIDER "="
-        sed 's/^/    | /' "$tmp_log"
-        _PRINT_DIVIDER "="
+        printf "    ${COLOR_RED}└─ ERROR OUTPUT:${COLOR_RESET}\n"
+        PRINT_DIVIDER "="
+        sed 's/^/    | /' "$TEMP_LOG_FILE"
+        PRINT_DIVIDER "="
 
-        rm -f "$tmp_log"
-        ERROR_EXIT "Failed during: $DESCRIPTION"
+        rm -f "$TEMP_LOG_FILE"
+        ERROR_EXIT "Failed during: $COMMAND_DESCRIPTION"
     fi
 }
 
-
-
-# Execute command silently
-SILENT() {
+SILENT()
+{
     "$@" > /dev/null 2>&1
 }
 
-
-CONFIRM_ACTION() {
-    local PROMPT="$1"
-    local DEFAULT="${2:-false}"
+CONFIRM_ACTION()
+{
+    local PROMPT_MESSAGE="$1"
+    local DEFAULT_ANSWER="${2:-false}"
 
     if IS_GITHUB_ACTIONS; then
-        [[ "$DEFAULT" == "true" ]] && return 0 || return 1
+        [[ "$DEFAULT_ANSWER" == "true" ]] && return 0 || return 1
     fi
 
-    local suffix="[y/N]"
-    [[ "$DEFAULT" == "true" ]] && suffix="[Y/n]"
+    local PROMPT_SUFFIX="[y/N]"
+    [[ "$DEFAULT_ANSWER" == "true" ]] && PROMPT_SUFFIX="[Y/n]"
 
-    echo -ne "${MAGENTA}[?]${NC} $PROMPT $suffix: "
-    read -r response
-    [[ -z "$response" ]] && [[ "$DEFAULT" == "true" ]] && return 0
+    echo -ne "${COLOR_CYAN}?${COLOR_RESET} $PROMPT_MESSAGE $PROMPT_SUFFIX: "
+    read -r USER_RESPONSE
+    [[ -z "$USER_RESPONSE" ]] && [[ "$DEFAULT_ANSWER" == "true" ]] && return 0
 
-    case "${response,,}" in
+    case "${USER_RESPONSE,,}" in
         y|yes) return 0 ;;
         *) return 1 ;;
     esac
 }
 
-
-_CHOICE() {
-    local PROMPT="$1"; shift
-    local options=("$@")
-    local idx
+PROMPT_CHOICE()
+{
+    local PROMPT_MESSAGE="$1"
+    shift
+    local CHOICE_OPTIONS=("$@")
+    local SELECTED_INDEX
 
     echo >&2
-    printf "${BOLD}${WHITE}%s${NC}\n" "$PROMPT" >&2
-    for i in "${!options[@]}"; do
-        printf "  ${CYAN}[%d]${NC} %s\n" $((i+1)) "${options[$i]}" >&2
+    printf "${TEXT_BOLD}${COLOR_WHITE}%b${COLOR_RESET}\n" "$PROMPT_MESSAGE" >&2
+    for OPTION_INDEX in "${!CHOICE_OPTIONS[@]}"; do
+        printf "  ${COLOR_CYAN}[%d]${COLOR_RESET} %b\n" $((OPTION_INDEX + 1)) "${CHOICE_OPTIONS[$OPTION_INDEX]}" >&2
     done
 
     while true; do
-        printf "${GREEN}>${NC} Select (1-${#options[@]}): " >&2
-        read -r idx
-        if [[ "$idx" =~ ^[0-9]+$ ]] && [ "$idx" -ge 1 ] && [ "$idx" -le ${#options[@]} ]; then
-            echo "$idx"
+        printf "${COLOR_GREEN}▸${COLOR_RESET} Select (1-${#CHOICE_OPTIONS[@]}): " >&2
+        read -r SELECTED_INDEX
+        if [[ "$SELECTED_INDEX" =~ ^[0-9]+$ ]] && [ "$SELECTED_INDEX" -ge 1 ] && [ "$SELECTED_INDEX" -le ${#CHOICE_OPTIONS[@]} ]; then
+            echo "$SELECTED_INDEX"
             return 0
         fi
     done
 }
 
+UPDATE_LOG_LINE()
+{
+    local LOG_MESSAGE="$1"
+    local COMPLETION_FLAG="$2"
 
-_UPDATE_LOG() {
-    local TITLE="$1"
-    local END_FLAG="$2"
+    printf "\r\e[2K${COLOR_WHITE}%b${COLOR_RESET}" "$LOG_MESSAGE"
 
-    printf "\r\e[2K${WHITE}%b${NC}" "$TITLE"
-
-    if [[ "$END_FLAG" == "DONE" || "$END_FLAG" == "END" ]]; then
+    if [[ "$COMPLETION_FLAG" == "DONE" || "$COMPLETION_FLAG" == "END" ]]; then
         echo ""
     fi
 }
 
-IS_INTERACTIVE() {
+IS_INTERACTIVE()
+{
     [[ -t 1 && -t 2 ]] && ! IS_GITHUB_ACTIONS
 }
+# ]

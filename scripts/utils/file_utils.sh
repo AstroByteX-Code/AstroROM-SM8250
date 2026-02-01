@@ -1,57 +1,58 @@
 #!/usr/bin/env bash
 #
-#  Copyright (c) 2025 Sameer Al Sahab
-#  Licensed under the MIT License. See LICENSE file for details.
+#  Copyright (c) 2025 Sameer Al Sahab
+#  Licensed under the MIT License. See LICENSE file for details.
 #
-#  Permission is hereby granted, free of charge, to any person obtaining a copy
-#  of this software and associated documentation files (the "Software"), to deal
-#  in the Software without restriction, including without limitation the rights
-#  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-#  copies of the Software, and to permit persons to whom the Software is
-#  furnished to do so, subject to the following conditions:
+#  Permission is hereby granted, free of charge, to any person obtaining a copy
+#  of this software and associated documentation files (the "Software"), to deal
+#  in the Software without restriction, including without limitation the rights
+#  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#  copies of the Software, and to permit persons to whom the Software is
+#  furnished to do so, subject to the following conditions:
 #
-#  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-#  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-#  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 #
 
-
-_GET_FILE_INODE() {
-    local file_path="$1"
-	# Returns inode only
-    stat -c "%i" "$file_path" 2>/dev/null || echo ""
+# [
+_GET_FILE_INODE()
+{
+    local FILE_PATH="$1"
+    # Returns inode only
+    stat -c "%i" "$FILE_PATH" 2>/dev/null || echo ""
 }
 
-
-_GET_MD5_HASH() {
-    local file_path="$1"
-    md5sum "$file_path" 2>/dev/null | awk '{print $1}' | tr -d '[:space:]'
+_GET_MD5_HASH()
+{
+    local FILE_PATH="$1"
+    md5sum "$FILE_PATH" 2>/dev/null | awk '{print $1}' | tr -d '[:space:]'
 }
 
-
-_GET_FILE_STAT() {
-    local file_path="$1"
+_GET_FILE_STAT()
+{
+    local FILE_PATH="$1"
     # %i=inode, %s=size, %Y=mtime
-    stat -c "%i.%s.%Y" "$file_path" 2>/dev/null || echo "unknown"
+    stat -c "%i.%s.%Y" "$FILE_PATH" 2>/dev/null || echo "unknown"
 }
-
 
 #
 # FETCH_FILE <container> <target_file> <output_directory>
 #
-FETCH_FILE() {
-    local container="$1"
-    local target_file="$2"
-    local out_dir="$3"
-    local depth="${4:-0}"
+FETCH_FILE()
+{
+    local CONTAINER="$1"
+    local TARGET_FILE="$2"
+    local OUT_DIR="$3"
+    local DEPTH="${4:-0}"
 
-    [[ -f "$container" ]] || return 1
-    mkdir -p "$out_dir"
+    [[ -f "$CONTAINER" ]] || return 1
+    mkdir -p "$OUT_DIR"
 
-    local out_path="$out_dir/$target_file"
-    [[ -s "$out_path" ]] && return 0
+    local OUT_PATH="$OUT_DIR/$TARGET_FILE"
+    [[ -s "$OUT_PATH" ]] && return 0
 
-    (( depth >= 5 )) && return 1
+    (( DEPTH >= 5 )) && return 1
 
     if [[ -z "${IS_DEPS_OK:-}" ]]; then
         COMMAND_EXISTS 7z  || CHECK_DEPENDENCY p7zip-full "7zip" true
@@ -59,228 +60,272 @@ FETCH_FILE() {
         IS_DEPS_OK=1
     fi
 
-    LOG_BEGIN "Fetching $target_file from $(basename "$container") (Depth: $depth)"
+    LOG_BEGIN "Fetching $TARGET_FILE from $(basename "$CONTAINER") (Depth: $DEPTH)"
 
-    local file_list
-    file_list="$(7z l "$container" 2>/dev/null)" || return 1
+    local FILE_LIST
+    FILE_LIST="$(7z l "$CONTAINER" 2>/dev/null)" || return 1
 
-
-    if echo "$file_list" | awk '{print $NF}' | grep -Fxq "$target_file"; then
-        7z x "$container" "$target_file" -so 2>/dev/null > "$out_path"
-        [[ -s "$out_path" ]] && return 0
-        rm -f "$out_path"
+    if echo "$FILE_LIST" | awk '{print $NF}' | grep -Fxq "$TARGET_FILE"; then
+        7z x "$CONTAINER" "$TARGET_FILE" -so 2>/dev/null > "$OUT_PATH"
+        [[ -s "$OUT_PATH" ]] && return 0
+        rm -f "$OUT_PATH"
     fi
 
-
-    if echo "$file_list" | awk '{print $NF}' | grep -Fxq "$target_file.lz4"; then
-        if 7z x "$container" "$target_file.lz4" -so 2>/dev/null \
-            | lz4 -d -c > "$out_path"; then
-            [[ -s "$out_path" ]] && return 0
+    if echo "$FILE_LIST" | awk '{print $NF}' | grep -Fxq "$TARGET_FILE.lz4"; then
+        if 7z x "$CONTAINER" "$TARGET_FILE.lz4" -so 2>/dev/null \
+            | lz4 -d -c > "$OUT_PATH"; then
+            [[ -s "$OUT_PATH" ]] && return 0
         fi
-        rm -f "$out_path"
+        rm -f "$OUT_PATH"
     fi
 
-
-    echo "$file_list" | awk '{print $NF}' \
+    echo "$FILE_LIST" | awk '{print $NF}' \
         | grep -E '\.(tar(\.md5)?|zip|lz4|bin|img|7z|xz|gz)$' \
-        | while read -r node; do
+        | while read -r NODE; do
 
-        local tmp_node
-        tmp_node="$(mktemp "$out_dir/tmp_$(basename "$node").XXXXXX")"
+        local TMP_NODE
+        TMP_NODE="$(mktemp "$OUT_DIR/tmp_$(basename "$NODE").XXXXXX")"
 
-        7z x "$container" "$node" -so 2>/dev/null > "$tmp_node" || {
-            rm -f "$tmp_node"
+        7z x "$CONTAINER" "$NODE" -so 2>/dev/null > "$TMP_NODE" || {
+            rm -f "$TMP_NODE"
             continue
         }
 
-        if FETCH_FILE "$tmp_node" "$target_file" "$out_dir" "$((depth + 1))"; then
-            rm -f "$tmp_node"
+        if FETCH_FILE "$TMP_NODE" "$TARGET_FILE" "$OUT_DIR" "$((DEPTH + 1))"; then
+            rm -f "$TMP_NODE"
             exit 0
         fi
 
-        rm -f "$tmp_node"
+        rm -f "$TMP_NODE"
     done
 
     return 1
 }
 
 
-#
-# Checks if a file exists or not in a firmware partition
-#
-EXISTS() {
-    local source_firmware
-    local partition_name
-    local target_path
+EXISTS()
+{
+    local SOURCE_FIRMWARE
+    local PARTITION_NAME
+    local TARGET_PATH
 
     if [[ $# -eq 2 ]]; then
-        source_firmware=""
-        partition_name="$1"
-        target_path="$2"
+        SOURCE_FIRMWARE=""
+        PARTITION_NAME="$1"
+        TARGET_PATH="$2"
     elif [[ $# -eq 3 ]]; then
-        source_firmware="$1"
-        partition_name="$2"
-        target_path="$3"
+        SOURCE_FIRMWARE="$1"
+        PARTITION_NAME="$2"
+        TARGET_PATH="$3"
     else
         ERROR_EXIT "Usage: EXISTS [source] <partition> <path>"
         return 1
     fi
 
-    local base_dir
-    base_dir=$(GET_PARTITION_PATH "$partition_name" "$source_firmware" 2>/dev/null) || return 1
-    [[ ! -d "$base_dir" ]] && return 1
+    local BASE_DIR
+    BASE_DIR=$(GET_PARTITION_PATH "$PARTITION_NAME" "$SOURCE_FIRMWARE" 2>/dev/null) || return 1
+    [[ ! -d "$BASE_DIR" ]] && return 1
 
-    local sanitized_path
-    sanitized_path=$(_SANITIZE_PATH "$target_path")
+    local SANITIZED_PATH
+    SANITIZED_PATH=$(_SANITIZE_PATH "$TARGET_PATH")
 
-    for match in "$base_dir"/$sanitized_path; do
-        [[ -e "$match" ]] && return 0
+    for MATCH in "$BASE_DIR"/$SANITIZED_PATH; do
+        [[ -e "$MATCH" ]] && return 0
     done
 
     return 1
 }
 
+MERGE_SPLITS()
+{
+    local SRC_BASE="$1"
+    local DESTINATION_FILE="$2"
+    local SEARCH_MODE="$3"
+    local PARTS=()
 
-MERGE_SPLITS() {
-    local src_base="$1"
-    local dest_file="$2"
-    local search_mode="$3"
-    local parts=()
+    if [[ "$SEARCH_MODE" == "DIR_CONTENTS" && -d "$SRC_BASE" ]]; then
 
-    if [[ "$search_mode" == "DIR_CONTENTS" && -d "$src_base" ]]; then
+        local FIRST
+        FIRST=$(ls "$SRC_BASE"/*.part* "$SRC_BASE"/*.0[0-9]* "$SRC_BASE"/*.a[a-z] 2>/dev/null | head -n 1)
 
-        local first
-        first=$(ls "$src_base"/*.part* "$src_base"/*.0[0-9]* "$src_base"/*.a[a-z] 2>/dev/null | head -n 1)
+        if [[ -n "$FIRST" ]]; then
 
-        if [[ -n "$first" ]]; then
+            local BASE_NAME
+            BASE_NAME=$(basename "$FIRST" | sed -E 's/\.(part[0-9]+|[0-9]{2,}|[a-z]{2})$//')
+            PARTS=($(ls "$SRC_BASE/$BASE_NAME."* "$SRC_BASE/${BASE_NAME}_part"* 2>/dev/null | sort))
 
-            local base_name
-            base_name=$(basename "$first" | sed -E 's/\.(part[0-9]+|[0-9]{2,}|[a-z]{2})$//')
-            parts=($(ls "$src_base/$base_name."* "$src_base/${base_name}_part"* 2>/dev/null | sort))
-
-            mkdir -p "$dest_file"
-            dest_file="$dest_file/$base_name"
+            mkdir -p "$DESTINATION_FILE"
+            DESTINATION_FILE="$DESTINATION_FILE/$BASE_NAME"
         fi
 
-    elif [[ "$search_mode" == "FILE_SUFFIX" ]]; then
+    elif [[ "$SEARCH_MODE" == "FILE_SUFFIX" ]]; then
 
-        parts=($(ls "${src_base}".part* "${src_base}"*.[0-9][0-9]* "${src_base}"*.[a-z][a-z] 2>/dev/null | sort))
+        PARTS=($(ls "${SRC_BASE}".part* "${SRC_BASE}"*.[0-9][0-9]* "${SRC_BASE}"*.[a-z][a-z] 2>/dev/null | sort))
     fi
 
-    if [[ ${#parts[@]} -gt 0 ]]; then
-        mkdir -p "$(dirname "$dest_file")"
-        cat "${parts[@]}" > "$dest_file" || ERROR_EXIT "Failed to merge splits to $dest_file"
+    if [[ ${#PARTS[@]} -gt 0 ]]; then
+        mkdir -p "$(dirname "$DESTINATION_FILE")"
+        cat "${PARTS[@]}" > "$DESTINATION_FILE" || ERROR_EXIT "Failed to merge splits to $DESTINATION_FILE"
         return 0
     fi
 
     return 1
 }
 
-#
-# Adds a file/folder from another firmware
-# ADD_FROM_FW "source" "partition" "path" [dest_partition]
-#
-ADD_FROM_FW() {
-    local source="$1"
-    local src_part="$2"
-    local src_path="$3"
-    local dst_part="${4:-$src_part}"
 
-    [[ -z "$source" || -z "$src_part" || -z "$src_path" ]] && \
-        ERROR_EXIT "Usage: ADD_FROM_FW <source> <src_partition> <src_path> [dest_partition]"
+ADD_FROM_FW()
+{
+    local SOURCE="$1"
+    local SRC_PART="$2"
+    local SRC_PATH="$3"
+    local DESTINATION_PATH="${4:-$SRC_PART}"
 
-    VALIDATE_WORKDIR "$source" || ERROR_EXIT "Invalid source: $source"
+    [[ -z "$SOURCE" || -z "$SRC_PART" || -z "$SRC_PATH" ]] && \
+        ERROR_EXIT "Usage: ADD_FROM_FW <source> <src_partition> <src_path> [path_inside_partition]"
 
-    local src_dir dst_dir
-    src_dir=$(GET_PARTITION_PATH "$src_part" "$source") || ERROR_EXIT "Unknown src partition: $src_part"
-    dst_dir=$(GET_PARTITION_PATH "$dst_part") || ERROR_EXIT "Unknown dst partition: $dst_part"
+    VALIDATE_WORKDIR "$SOURCE" || ERROR_EXIT "Invalid source: $SOURCE"
 
-    local clean_path full_src full_dst
-    clean_path=$(_SANITIZE_PATH "$src_path")
-    full_src="$src_dir/$clean_path"
-    full_dst="$dst_dir/$clean_path"
+    local SRC_DIR DST_DIR
+    SRC_DIR=$(GET_PARTITION_PATH "$SRC_PART" "$SOURCE") || ERROR_EXIT "Unknown src partition: $SRC_PART"
+    DST_DIR=$(GET_PARTITION_PATH "$DESTINATION_PATH") || ERROR_EXIT "Unknown dst partition: $DESTINATION_PATH"
 
-    if [[ -d "$full_src" ]]; then
-        if MERGE_SPLITS "$full_src" "$full_dst" "DIR_CONTENTS"; then
+    local CLEAN_PATH FULL_SRC FULL_DST
+    CLEAN_PATH=$(_SANITIZE_PATH "$SRC_PATH")
+    FULL_SRC="$SRC_DIR/$CLEAN_PATH"
+    FULL_DST="$DST_DIR/$CLEAN_PATH"
+
+    if [[ -d "$FULL_SRC" ]]; then
+        if MERGE_SPLITS "$FULL_SRC" "$FULL_DST" "DIR_CONTENTS"; then
             return 0
         fi
 
-        mkdir -p "$full_dst"
+        mkdir -p "$FULL_DST"
 
-        LOG "Adding folder $clean_path from $source"
+        LOG "Adding folder $CLEAN_PATH from $SOURCE"
 
-
-        rsync -a --no-owner --no-group "$full_src/" "$full_dst/" || \
-            ERROR_EXIT "Failed to copy folder $clean_path"
+        rsync -a --no-owner --no-group "$FULL_SRC/" "$FULL_DST/" || \
+            ERROR_EXIT "Failed to copy folder $CLEAN_PATH"
         return 0
 
     fi
 
-
-    if [[ -f "$full_src" ]]; then
-        mkdir -p "$(dirname "$full_dst")"
-        LOG "Adding file $clean_path from $source"
-        cp -f "$full_src" "$full_dst" || ERROR_EXIT "Copy failed: $clean_path"
+    if [[ -f "$FULL_SRC" ]]; then
+        mkdir -p "$(dirname "$FULL_DST")"
+        LOG "Adding file $CLEAN_PATH from $SOURCE"
+        cp -f "$FULL_SRC" "$FULL_DST" || ERROR_EXIT "Copy failed: $CLEAN_PATH"
         return 0
     fi
 
-
-    if MERGE_SPLITS "$full_src" "$full_dst" "FILE_SUFFIX"; then
+    if MERGE_SPLITS "$FULL_SRC" "$FULL_DST" "FILE_SUFFIX"; then
         return 0
     fi
 
-    LOG_WARN "Path not found in source: $clean_path"
+    LOG_WARN "Path not found in source: $CLEAN_PATH"
 }
 
 
-#
-# Usage: ADD "partition_name" "source_path" "relative_dest_path" [log_label]
-#
-ADD() {
-    local partition="$1"
-    local src_path="$2"
-    local dest_rel="$3"
-    local label="${4:-$(basename "$src_path")}"
+ADD()
+{
+    local PARTITION="$1"
+    local SRC_PATH="$2"
+    local DESTINATION_PATH="$3"
+    local LABEL="${4:-$(basename "$SRC_PATH")}"
 
-    local part_root full_dest
-    part_root=$(GET_PARTITION_PATH "$partition") || \
-        ERROR_EXIT "Add failed: partition '$partition'"
+    local PART_ROOT FULL_DEST
+    PART_ROOT=$(GET_PARTITION_PATH "$PARTITION") || \
+        ERROR_EXIT "Add failed: partition '$PARTITION'"
 
-    full_dest="$part_root/$dest_rel"
+    FULL_DEST="$PART_ROOT/$DESTINATION_PATH"
 
-    [[ "$src_path" == "$full_dest" ]] && return 0
+    [[ "$SRC_PATH" == "$FULL_DEST" ]] && return 0
 
-    if [[ -d "$src_path" ]]; then
+    if [[ -d "$SRC_PATH" ]]; then
 
+        mkdir -p "$FULL_DEST"
+        LOG "Adding folder: $LABEL"
 
-        mkdir -p "$full_dest"
-        LOG "Adding folder: $label"
-
-
-        rsync -a --no-owner --no-group "$src_path/" "$full_dest/" || \
-            ERROR_EXIT "Failed to add $label"
+        rsync -a --no-owner --no-group "$SRC_PATH/" "$FULL_DEST/" || \
+            ERROR_EXIT "Failed to add $LABEL"
         return 0
     fi
 
+    if [[ -f "$SRC_PATH" ]]; then
 
-    if [[ -f "$src_path" ]]; then
-
-        if [[ -d "$full_dest" ]]; then
-            full_dest="$full_dest/$(basename "$src_path")"
+        if [[ -d "$FULL_DEST" ]]; then
+            FULL_DEST="$FULL_DEST/$(basename "$SRC_PATH")"
         fi
 
-        mkdir -p "$(dirname "$full_dest")"
-        LOG "Adding file: $label"
-        cp -f "$src_path" "$full_dest" || ERROR_EXIT "Copy failed: $label"
+        mkdir -p "$(dirname "$FULL_DEST")"
+        LOG "Adding file: $LABEL"
+        cp -f "$SRC_PATH" "$FULL_DEST" || ERROR_EXIT "Copy failed: $LABEL"
         return 0
     fi
 
-
-    if [[ ! -e "$src_path" ]]; then
-        if MERGE_SPLITS "$src_path" "$full_dest" "FILE_SUFFIX"; then
+    if [[ ! -e "$SRC_PATH" ]]; then
+        if MERGE_SPLITS "$SRC_PATH" "$FULL_DEST" "FILE_SUFFIX"; then
             return 0
         fi
     fi
 
-    ERROR_EXIT "Source not found: $src_path"
+    ERROR_EXIT "Source not found: $SRC_PATH"
 }
+
+#
+# Removes file from workspace
+# Usage REMOVE "partition" "path"
+#
+REMOVE()
+{
+    local PARTITION="$1"
+    local PATH_INSIDE_PARTITION="$2"
+
+    if [[ -z "$PARTITION" || -z "$PATH_INSIDE_PARTITION" ]]; then
+        ERROR_EXIT "Missing arguments. Usage: REMOVE <partition> <path>"
+    fi
+
+    local BASE_DIR
+    BASE_DIR=$(GET_PARTITION_PATH "$PARTITION" 2>/dev/null)
+    if [[ $? -ne 0 ]]; then
+        ERROR_EXIT "Failed to get partition directory for '$PARTITION'"
+    fi
+
+    local CLEAN_PATH
+    CLEAN_PATH=$(_SANITIZE_PATH "$PATH_INSIDE_PARTITION")
+
+    local FOUND_ANY=false
+
+    for MATCH in "${BASE_DIR}"/$CLEAN_PATH; do
+
+        [[ ! -e "$MATCH" && ! -L "$MATCH" ]] && continue
+
+        FOUND_ANY=true
+
+        # Remove from Disk
+        if ! rm -rf "$MATCH" 2>/dev/null; then
+            ERROR_EXIT "Failed to remove '$MATCH'"
+        fi
+
+        local ACTUAL_REL_PATH="${MATCH#$BASE_DIR/}"
+
+        local ESCAPED_PATH
+        ESCAPED_PATH=$(printf '%s' "$ACTUAL_REL_PATH" | sed 's/[.[\*^$()+?{|]/\\&/g')
+
+        local FS_CONFIG_FILE="$WORKSPACE/config/${PARTITION}_fs_config"
+        local FILE_CONTEXTS_FILE="$WORKSPACE/config/${PARTITION}_file_contexts"
+
+        if [[ -f "$FS_CONFIG_FILE" ]]; then
+            sed -i "\|^${PARTITION}/${ESCAPED_PATH}\(/\|[[:space:]]\)|d" "$FS_CONFIG_FILE"
+        fi
+
+        if [[ -f "$FILE_CONTEXTS_FILE" ]]; then
+            sed -i "\|^/${PARTITION}/${ESCAPED_PATH}\(/\|[[:space:]]\)|d" "$FILE_CONTEXTS_FILE"
+        fi
+    done
+
+    if [[ "$FOUND_ANY" = false ]]; then
+        LOG_WARN "No files matching '${PARTITION}/${CLEAN_PATH}' found to remove."
+    fi
+
+    return 0
+}
+# ]

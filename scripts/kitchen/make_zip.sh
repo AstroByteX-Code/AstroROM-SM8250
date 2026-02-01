@@ -1,27 +1,26 @@
 #!/usr/bin/env bash
 #
-#  Copyright (c) 2025 Sameer Al Sahab
-#  Licensed under the MIT License. See LICENSE file for details.
+#  Copyright (c) 2025 Sameer Al Sahab
+#  Licensed under the MIT License. See LICENSE file for details.
 #
-#  Permission is hereby granted, free of charge, to any person obtaining a copy
-#  of this software and associated documentation files (the "Software"), to deal
-#  in the Software without restriction, including without limitation the rights
-#  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-#  copies of the Software, and to permit persons to whom the Software is
-#  furnished to do so, subject to the following conditions:
+#  Permission is hereby granted, free of charge, to any person obtaining a copy
+#  of this software and associated documentation files (the "Software"), to deal
+#  in the Software without restriction, including without limitation the rights
+#  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#  copies of the Software, and to permit persons to whom the Software is
+#  furnished to do so, subject to the following conditions:
 #
-#  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-#  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-#  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 #
 
-
+# [
 PEM_CERT="${PREBUILTS}/signapk/keys/aosp_testkey.x509.pem"
 PK8_KEY="${PREBUILTS}/signapk/keys/aosp_testkey.pk8"
 
-
-
-CREATE_FLASHABLE_ZIP() {
+CREATE_FLASHABLE_ZIP()
+{
     local BUILD_DATE
     local ZIP_NAME_PREFIX
     local SUPER_IMAGE_PATH
@@ -53,7 +52,6 @@ CREATE_FLASHABLE_ZIP() {
     cp -a "${PREBUILTS}/dynamic_installer/." "${ZIP_BUILD_DIR}/"
     mv "${SUPER_IMAGE_PATH}" "${ZIP_BUILD_DIR}/super.img"
 
-
     cp "${DIROUT}"/*.img "${ZIP_BUILD_DIR}/" 2>/dev/null || true
 
     [[ -f "${DIROUT}/param.bin" ]] && cp "${DIROUT}/param.bin" "${ZIP_BUILD_DIR}/"
@@ -80,7 +78,6 @@ CREATE_FLASHABLE_ZIP() {
         EXTRA_BLOCKS+=$'\nui_print "Installing Param...";\nupdate_zip up_param.bin $(find_block up_param);'
     fi
 
-
     if [[ -f "${UPDATER_SCRIPT_PATH}" ]]; then
         local ASSERT_BLOCKS="${EXTRA_BLOCKS//$'\n'/\\n}"
 
@@ -92,7 +89,6 @@ CREATE_FLASHABLE_ZIP() {
             -e "s|__EXTRA_ASSERTS__|${ASSERT_BLOCKS}|g" \
             "${UPDATER_SCRIPT_PATH}"
     fi
-
 
     RUN_CMD "Building ROM zip" \
         "cd '${ZIP_BUILD_DIR}' && 7z a -tzip -mx=${COMPRESSION_LEVEL} '${UNSIGNED_ZIP_PATH}' ."
@@ -112,13 +108,9 @@ CREATE_FLASHABLE_ZIP() {
 }
 
 
-
-#
-# Creates a super.img from individual partition images using lpmake.
-#
-BUILD_SUPER_IMAGE() {
+BUILD_SUPER_IMAGE()
+{
     local CONFIG_FILE="$WORKDIR/$STOCK_MODEL/unpack.conf"
-
 
     [[ ! -f "$CONFIG_FILE" ]] && ERROR_EXIT "config not found for super image generation. Make sure you have stock firmware unpacked."
 
@@ -127,23 +119,23 @@ BUILD_SUPER_IMAGE() {
     [[ -n "${DEVICE_SUPER_PARTITION_SIZE:-}" ]] && SUPER_SIZE="$DEVICE_SUPER_PARTITION_SIZE"
     [[ -n "${DEVICE_SUPER_GROUP_BASIC_SIZE:-}" ]] && GROUP_SIZE="$DEVICE_SUPER_GROUP_BASIC_SIZE"
 
-    local valid_partitions=()
-    local current_total_size=0
+    local VALID_PARTITIONS=()
+    local CURRENT_TOTAL_SIZE=0
 
-    for part in $PARTITIONS; do
-        local img="$DIROUT/${part}.img"
+    for PART in $PARTITIONS; do
+        local IMG="$DIROUT/${PART}.img"
 
-        if [[ -f "$img" ]] && IS_DYNAMIC_PARTITION "$part"; then
-            valid_partitions+=("$part")
-            current_total_size=$(( current_total_size + $(stat -c%s "$img") ))
+        if [[ -f "$IMG" ]] && IS_DYNAMIC_PARTITION "$PART"; then
+            VALID_PARTITIONS+=("$PART")
+            CURRENT_TOTAL_SIZE=$(( CURRENT_TOTAL_SIZE + $(stat -c%s "$IMG") ))
         fi
     done
 
-    (( current_total_size > GROUP_SIZE )) && ERROR_EXIT "Partition sizes ($current_total_size) exceed group limit ($GROUP_SIZE). Please try to reduce size."
+    (( CURRENT_TOTAL_SIZE > GROUP_SIZE )) && ERROR_EXIT "Partition sizes ($CURRENT_TOTAL_SIZE) exceed group limit ($GROUP_SIZE). Please try to reduce size."
 
     # Build the argument list for lpmake
     # https://android.googlesource.com/platform/system/extras/+/master/partition_tools/
-    local lp_args=(
+    local LP_ARGS=(
         --device-size "$SUPER_SIZE"
         --metadata-size "$METADATA_SIZE"
         --metadata-slots "$METADATA_SLOTS"
@@ -151,37 +143,36 @@ BUILD_SUPER_IMAGE() {
         --output "$DIROUT/super.img"
     )
 
-    for part in "${valid_partitions[@]}"; do
-        local p_size=$(stat -c%s "$DIROUT/${part}.img")
-        lp_args+=(--partition "${part}:readonly:${p_size}:${GROUP_NAME}")
-        lp_args+=(--image "${part}=$DIROUT/${part}.img")
+    for PART in "${VALID_PARTITIONS[@]}"; do
+        local P_SIZE=$(stat -c%s "$DIROUT/${PART}.img")
+        LP_ARGS+=(--partition "${PART}:readonly:${P_SIZE}:${GROUP_NAME}")
+        LP_ARGS+=(--image "${PART}=$DIROUT/${PART}.img")
     done
 
-    RUN_CMD "Building super.img" "$PREBUILTS/android-tools/lpmake ${lp_args[*]}"
+    RUN_CMD "Building super.img" "$PREBUILTS/android-tools/lpmake ${LP_ARGS[*]}"
 
-
-    for part in "${valid_partitions[@]}"; do
-        rm -f "$DIROUT/${part}.img"
+    for PART in "${VALID_PARTITIONS[@]}"; do
+        rm -f "$DIROUT/${PART}.img"
     done
 }
 
-
-REPACK_ROM() {
+REPACK_ROM()
+{
     local TARGET_FILESYSTEM="$1"
 
     mkdir -p "$ASTROROM/out"
 
-    for part_dir in "$WORKSPACE"/*/; do
-        local name=$(basename "$part_dir")
+    for PART_DIR in "$WORKSPACE"/*/; do
+        local NAME=$(basename "$PART_DIR")
         local TARGET_FS="$TARGET_FILESYSTEM"
 
-        [[ "$name" =~ ^(config|lost\+found|patches)$ ]] && continue
+        [[ "$NAME" =~ ^(config|lost\+found|patches)$ ]] && continue
 
-        if [[ "$name" == "optics" || "$name" == "prism" ]]; then
+        if [[ "$NAME" == "optics" || "$NAME" == "prism" ]]; then
             TARGET_FS="ext4"
         fi
 
-        REPACK_PARTITION "$name" "$TARGET_FS" "$DIROUT" "$WORKSPACE"
+        REPACK_PARTITION "$NAME" "$TARGET_FS" "$DIROUT" "$WORKSPACE"
     done
 
     # Check if we should create a full zip or just the unpacked images for debugging. For instance , fastboot or recovery flash.
@@ -196,7 +187,8 @@ REPACK_ROM() {
 
 # Very old method , work for under 4GB zips
 # https://github.com/HemanthJabalpuri/signapk/blob/main/shell/SignApk.sh
-SIGN_ROM_ZIP() {
+SIGN_ROM_ZIP()
+{
     local IN_ZIP="$1"
     local OUT_ZIP="$2"
     local PK8_FILE="$3"
@@ -209,28 +201,30 @@ SIGN_ROM_ZIP() {
     COMMAND_EXISTS openssl || ERROR_EXIT "openssl not found"
     COMMAND_EXISTS od || ERROR_EXIT "od not found"
 
-    local fsize
-    fsize=$(stat -c "%s" "$IN_ZIP")
-    LOG_INFO "ZIP size: $fsize bytes"
+    local FSIZE
+    FSIZE=$(stat -c "%s" "$IN_ZIP")
+    LOG_INFO "ZIP size: $FSIZE bytes"
 
-    getData() {
+    getData()
+    {
         dd if="$IN_ZIP" status=none iflag=skip_bytes,count_bytes bs=4096 skip=$1 count=$2
     }
 
-    getByte() {
+    getByte()
+    {
         getData "$1" 1 | od -A n -t x1 | tr -d " "
     }
 
-    local b1 b2 b3
-    b1=$(getByte $((fsize-22)))
-    b2=$(getByte $((fsize-21)))
-    b3=$(getByte $((fsize-20)))
+    local B1 B2 B3
+    B1=$(getByte $((FSIZE-22)))
+    B2=$(getByte $((FSIZE-21)))
+    B3=$(getByte $((FSIZE-20)))
 
-    if [[ "$b1" != "50" || "$b2" != "4b" || "$b3" != "05" ]]; then
+    if [[ "$B1" != "50" || "$B2" != "4b" || "$B3" != "05" ]]; then
         ERROR_EXIT "ZIP already signed or has a comment"
     fi
 
-    getData 0 $((fsize - 2)) > "$OUT_ZIP"
+    getData 0 $((FSIZE - 2)) > "$OUT_ZIP"
 
     local SIGNATURE
     SIGNATURE=$(openssl dgst -sha1 -hex -sign "$PK8_FILE" "$OUT_ZIP" \
@@ -252,11 +246,11 @@ SIGN_ROM_ZIP() {
     LOG_INFO "Signed successfully"
 }
 
-
-IS_DYNAMIC_PARTITION() {
-    local part_name="$1"
+IS_DYNAMIC_PARTITION()
+{
+    local PART_NAME="$1"
     # List of common dynamic partitions
-    case "$part_name" in
+    case "$PART_NAME" in
         system|vendor|product|system_ext|odm|vendor_dlkm|system_dlkm|odm_dlkm)
             return 0
             ;;
@@ -265,5 +259,4 @@ IS_DYNAMIC_PARTITION() {
             ;;
     esac
 }
-
-
+# ]
