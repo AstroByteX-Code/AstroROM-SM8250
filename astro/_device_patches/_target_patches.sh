@@ -1,10 +1,10 @@
-
+# ==============================================================================
 #
 # MOD_NAME="Target devices patches"
-# MOD_AUTHOR="Salvo Giangreco , ExtremeXT , ShaDisNX255 and Fede"
+# MOD_AUTHOR="Salvo Giangreco , ExtremeXT , ShaDisNX255"
 # MOD_DESC="Apply device related features on source firmware."
 #
-
+# ==============================================================================
 
 # NOTE This is not completed yet.
 
@@ -30,3 +30,5 @@ BPROP "system" "ro.factory.model" "$STOCK_MODEL"
 FF_IF_DIFF "stock" "COMMON_CONFIG_MDNIE_MODE"
 FF_IF_DIFF "stock" "LCD_SUPPORT_AMOLED_DISPLAY"
 
+# Netflix props
+BPROP_IF_DIFF "stock" "system" "ro.netflix.bsp_rev"
