@@ -1,0 +1,35 @@
+#  Build Out 
+out/
+
+# Firmwares
+firmware/
+firmware/**
+workspace/
+
+# Temporary files 
+*.tmp
+*.bak
+
+# Editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.kate-swp
+
+# Python 
+__pycache__/
+*.pyc
+
+
+# WSL / Windows garbage sh*t
+*Zone.Identifier*
+
+# Allow git internals
+!.gitignore
+!.gitattributes
+
+# Allow GitHub workflows
+!.github/
+!.github/workflows/
+!.github/workflows/**
