@@ -1,0 +1,33 @@
+
+#
+# MOD_NAME="Target devices patches"
+# MOD_AUTHOR="Salvo Giangreco , ExtremeXT , ShaDisNX255 and Fede"
+# MOD_DESC="Apply device related features on source firmware."
+#
+
+
+# NOTE This is not completed yet.
+
+# Set target model name
+FF_IF_DIFF "stock" "SETTINGS_CONFIG_BRAND_NAME"
+FF_IF_DIFF "stock" "SYSTEM_CONFIG_SIOP_POLICY_FILENAME"
+
+ASTRO_CODENAME="$(GET_PROP "system" "ro.product.system.name" "stock")"
+
+if [[ -n "$ASTRO_CODENAME" ]]; then
+    BPROP "system" "ro.astro.codename" "$ASTRO_CODENAME"
+else
+    BPROP "system" "ro.astro.codename" "$CODENAME"
+fi
+
+# Set source model as new prop
+BPROP "system" "ro.product.astro.model" "$STOCK_MODEL"
+
+# Edge lighting target corner radius
+BPROP "system" "ro.factory.model" "$STOCK_MODEL"
+
+# Display
+FF_IF_DIFF "stock" "COMMON_CONFIG_MDNIE_MODE"
+FF_IF_DIFF "stock" "LCD_SUPPORT_AMOLED_DISPLAY"
+
+
