@@ -199,7 +199,7 @@ UNPACK_PARTITION()
 
     case "$FS_TYPE" in
         "ext4") mount -o ro "$IMAGE_PATH" "$MNT" ;;
-        "erofs") "$PREBUILTS/erofs-utils/fuse.erofs" "$IMAGE_PATH" "$MNT" ;;
+        "erofs") SILENT "$PREBUILTS/erofs-utils/fuse.erofs" "$IMAGE_PATH" "$MNT" ;;
         "f2fs") [[ ! IS_WSL ]] && mount -o ro "$IMAGE_PATH" "$MNT" ;;
         *)      ERROR_EXIT "Unsupported filesystem: $FS_TYPE"; return 1 ;;
     esac
