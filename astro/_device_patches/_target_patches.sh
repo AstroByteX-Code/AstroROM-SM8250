@@ -12,6 +12,9 @@
 FF_IF_DIFF "stock" "SETTINGS_CONFIG_BRAND_NAME"
 FF_IF_DIFF "stock" "SYSTEM_CONFIG_SIOP_POLICY_FILENAME"
 
+BPROP "system" "ro.product.system.model" "$DEVICE_MODEL"
+BPROP "system" "ro.product.product.model" "$DEVICE_MODEL"
+
 ASTRO_CODENAME="$(GET_PROP "system" "ro.product.system.name" "stock")"
 
 if [[ -n "$ASTRO_CODENAME" ]]; then
@@ -21,10 +24,10 @@ else
 fi
 
 # Set source model as new prop
-BPROP "system" "ro.product.astro.model" "$STOCK_MODEL"
+BPROP "system" "ro.product.astro.model" "$DEVICE_MODEL"
 
 # Edge lighting target corner radius
-BPROP "system" "ro.factory.model" "$STOCK_MODEL"
+BPROP "system" "ro.factory.model" "$DEVICE_MODEL"
 
 # Display
 FF_IF_DIFF "stock" "COMMON_CONFIG_MDNIE_MODE"

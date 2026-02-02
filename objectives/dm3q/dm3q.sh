@@ -24,17 +24,17 @@
 CODENAME="dm3q"
 PLATFORM="sd_8550"
 
-# Stock firmware details
+# Stock firmware details for download
 STOCK_MODEL="SM-S918B"
 STOCK_CSC="EUX"
 STOCK_IMEI="350196551234562"
 
-# Source firmware details
+# Source firmware details for download
 MODEL="SM-S918B"
 CSC="EUX"
 IMEI="350196551234562"
 
-# Extra firmware (Optional) details
+# Extra firmware (Optional) details for download
 EXTRA_MODEL=""
 EXTRA_CSC=""
 EXTRA_IMEI=""

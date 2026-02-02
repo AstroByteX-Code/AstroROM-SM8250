@@ -23,18 +23,19 @@
 # Galaxy Z Flip config
 CODENAME="b5q"
 PLATFORM="sd_8550"
+DEVICE_ACTUAL_MODEL="SM-F731B"
 
-# Stock firmware details
+# Stock firmware details for download
 STOCK_MODEL="SM-F731U1"
 STOCK_CSC="ATT"
 STOCK_IMEI="357459403943704"
 
-# Source firmware details
+# Source firmware details for download
 MODEL="SM-F731U1"
 CSC="ATT"
 IMEI="357459403943704"
 
-# Extra firmware (Optional) details
+# Extra firmware (Optional) details for download
 EXTRA_MODEL=""
 EXTRA_CSC=""
 EXTRA_IMEI=""
