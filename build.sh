@@ -64,6 +64,34 @@ for UTIL in "$ASTROROM"/scripts/**/*.sh; do
     fi
 done
 
+USE_THREADS() {
+    local CPU_CORES
+    local TOTAL_MEM_GB
+    local THREADS
+    local RAM_LIMIT
+
+    CPU_CORES="$(nproc)"
+    TOTAL_MEM_GB="$(free -g | awk '/^Mem:/{print $2}')"
+
+    if IS_GITHUB_ACTIONS; then
+        THREADS="$CPU_CORES"
+    else
+        THREADS="$((CPU_CORES - 1))"
+    fi
+
+    RAM_LIMIT="$((TOTAL_MEM_GB / 2))"
+
+    if (( THREADS > RAM_LIMIT )); then
+        THREADS="$RAM_LIMIT"
+    fi
+
+    (( THREADS < 1 )) && THREADS=1
+
+    echo "$THREADS"
+}
+
+USABLE_THREADS="$(USE_THREADS)"
+
 EXEC_SCRIPT()
 {
     local SCRIPT_FILE="$1"

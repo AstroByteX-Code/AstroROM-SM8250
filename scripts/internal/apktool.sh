@@ -24,8 +24,6 @@
 # https://github.com/iBotPeaches/Apktool/issues/1775
 
 DEFAULT_SDK="36"  #branch sixteen
-USABLE_THREADS=$(( $(nproc) - 1 ))
-[[ $USABLE_THREADS -lt 1 ]] && USABLE_THREADS=1
 
 PATCH_MARKER_FILE="$WORKSPACE/.patch_markers"
 
