@@ -35,7 +35,6 @@ DECOMPILE_RES=true
 
 APK_TO_DECOMPILE_RES=(
     product_overlay.apk
-    SecSetupWizard_Global.apk
     #wallpaper-res.apk
     #SecSettings.apk
     #SystemUI.apk
@@ -165,7 +164,7 @@ DECOMPILE()
     else
 
         # Standard flags
-        local FLAGS=("-f" "-j" "$USABLE_THREADS" "-o" "$WORK_DIR" "-p" "$FRAMEWORK_DIR" "-t" "$SDK" "-s")
+        local FLAGS=("-f" "-j" "$USABLE_THREADS" "-o" "$WORK_DIR" "-p" "$FRAMEWORK_DIR"  )
 
         # Resource decompile for listed APKs we declared on top
         local IN_LIST="false"
@@ -177,20 +176,22 @@ DECOMPILE()
             FLAGS+=("-r")
         fi
 
-        java -jar "$PREBUILTS/apktool/apktool.jar" d "${FLAGS[@]}" "$FILE" > /dev/null 2>&1 || \
+        # --no-debug-info is equals to baksmali --ac false and other flags and similarly use .locals instead of registers , so we can skip baksmali here.
+        java -jar "$PREBUILTS/apktool/apktool.jar" d --no-debug-info "${FLAGS[@]}" "$FILE" > /dev/null 2>&1 || \
             ERROR_EXIT "Decompile failed"
 
+
         # Baksmali all DEX files
-        find "$WORK_DIR" -maxdepth 1 -name "*.dex" | while read -r DEX; do
-            local D_NAME=$(basename "$DEX")
-            local OUT="smali"
-            [[ "$D_NAME" != "classes.dex" ]] && OUT="smali_${D_NAME%.dex}"
+        #find "$WORK_DIR" -maxdepth 1 -name "*.dex" | while read -r DEX; do
+        #    local D_NAME=$(basename "$DEX")
+        #    local OUT="smali"
+        #    [[ "$D_NAME" != "classes.dex" ]] && OUT="smali_${D_NAME%.dex}"
 
-            java -jar "$PREBUILTS/smali/baksmali.jar" d -a "$API" --ac false --di false \
-                -j "$USABLE_THREADS" -l -o "$WORK_DIR/$OUT" "$DEX" > /dev/null 2>&1
+        #   java -jar "$PREBUILTS/smali/baksmali.jar" d -a "$API" --ac false --di false \
+        #        -j "$USABLE_THREADS" -l -o "$WORK_DIR/$OUT" "$DEX" > /dev/null 2>&1
 
-            rm -f "$DEX"
-        done
+        #   rm -f "$DEX"
+        #done
     fi
 
     # Extract extra resources for JARs (Issue found on OneUI6+)
@@ -234,7 +235,6 @@ BUILD()
 
     local APKTOOL_FLAGS=(
         "b"
-        "-api" "$API"
         "-j" "$USABLE_THREADS"
         "-p" "$FRAMEWORK_DIR"
         "-o" "$BUILT_FILE"
