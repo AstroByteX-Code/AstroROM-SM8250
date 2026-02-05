@@ -54,6 +54,7 @@ BLOAT_TARGETS+=(
     "Scone"
     "Upday"
     "VzCloud"
+    "OmcAgent5" # App Recommendations
 )
 
 SILENT REMOVE "system" "etc/permissions/privapp-permissions-com.samsung.android.app.updatecenter.xml"
