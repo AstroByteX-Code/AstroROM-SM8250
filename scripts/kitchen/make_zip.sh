@@ -83,7 +83,7 @@ CREATE_FLASHABLE_ZIP()
 
         sed -i \
             -e "s|__ROM_VERSION__|${ROM_VERSION}|g" \
-            -e "s|__MODEL_NAME__|${MODEL_NAME}|g" \
+            -e "s|__MODEL_NAME__|${DEVICE_MODEL_NAME}|g" \
             -e "s|__BUILD_DATE__|${BUILD_DATE}|g" \
             -e "s|__CODENAME__|${CODENAME}|g" \
             -e "s|__EXTRA_ASSERTS__|${ASSERT_BLOCKS}|g" \
