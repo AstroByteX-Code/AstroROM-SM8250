@@ -1,4 +1,5 @@
 
+if ! GET_FEATURE DEVICE_USE_STOCK_BASE; then
 # Other Device based camera fixes can be found on objectives and platform folder
 # Remove source camera props and add stock only
 if ! find "$OBJECTIVE" -type f -name "floating_feature.xml" | grep -q .; then
@@ -42,3 +43,5 @@ PATCH_CAMERA_LIBS() {
 LOG_BEGIN "Patching camera for portrait mode.."
 
 PATCH_CAMERA_LIBS
+
+fi

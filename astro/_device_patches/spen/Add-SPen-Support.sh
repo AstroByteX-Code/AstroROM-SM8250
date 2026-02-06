@@ -1,4 +1,6 @@
 
+if ! GET_FEATURE DEVICE_USE_STOCK_BASE; then
+
 AIR_COMMAND_PKGS=(
     "AirCommand"
     "AirGlance"
@@ -65,4 +67,4 @@ else
     fi
 fi
 
-
+fi

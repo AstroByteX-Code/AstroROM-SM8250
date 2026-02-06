@@ -1,4 +1,5 @@
 
+if ! GET_FEATURE DEVICE_USE_STOCK_BASE; then
 MANIFEST="$WORKSPACE/vendor/etc/vintf/manifest.xml"
 
 if grep -q "vendor.samsung.hardware.biometrics.face" "$MANIFEST" && grep -q "<version>2.0</version>" "$MANIFEST"; then
@@ -35,4 +36,6 @@ if grep -q "vendor.samsung.hardware.biometrics.face" "$MANIFEST" && grep -q "<ve
             LOG_INFO "Device already has latest hals. No patch required."
         fi
     fi
+fi
+
 fi
