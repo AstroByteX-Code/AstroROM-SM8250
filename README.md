@@ -32,6 +32,7 @@ To create a universal, hassle-free ROM modification solution that will auto patc
 - All flagship features 
 - Battery health and charging cycles info
 - Multiuser support enabled
+- Dialogue booster AI in sound
 - Fullscreen wallpaper Always on Display
 - Adaptive color tone
 - Outdoor mode
@@ -41,13 +42,13 @@ To create a universal, hassle-free ROM modification solution that will auto patc
 - Bluetooth library patched
 - Smart Manager China
 - Samsung encryption removed
-- Fixed Knox apps (Secure Folder , Secure WiFi , Private Share , Health etc)
+- Fixed Knox apps (Secure Folder,Secure WiFi,Private Share,Health etc)
 - Fixed samsung wearables 
 - Inbuilt PUI theme 
 - Disabled secure screenshot detection
 - Fixed SmartView
 - Unlimited google photos storage with original quality 
-
+- Enables some hidden device features
 - And many more!
 
 ### CSC Features
