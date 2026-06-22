@@ -9,6 +9,8 @@
 
 # Nuke odex files
 find $WORKSPACE/system/system/ -type f \( -name "*.odex" -o -name "*.vdex" -o -name "*.art" -o -name "*.oat" \) -delete
+find "$WORKSPACE/system/system/" \( -type f \( -name "*.odex" -o -name "*.vdex" -o -name "*.art" -o -name "*.oat" \) -o -type d -name "oat" \) -exec rm -rf {} +
+find "$WORKSPACE/product/" \( -type f \( -name "*.odex" -o -name "*.vdex" -o -name "*.art" -o -name "*.oat" \) -o -type d -name "oat" \) -exec rm -rf {} +
 
 # Remove folders
 SILENT REMOVE "system" "hidden"
@@ -54,14 +56,24 @@ BLOAT_TARGETS+=(
     "Scone"
     "Upday"
     "VzCloud"
+    "NfcNci"
+    "YourPhone_P1_5"
+    "KidsHome_Installer"
     "OmcAgent5" # App Recommendations
 )
 
 SILENT REMOVE "system" "etc/permissions/privapp-permissions-com.samsung.android.app.updatecenter.xml"
 SILENT REMOVE "system" "etc/permissions/privapp-permissions-com.sec.bcservice.xml"
+SILENT REMOVE "system" "etc/signature-permissions-com.sec.android.app.kidshome.xml"
 
 # GAME HUB
-BLOAT_TARGETS+=("GameHome")
+BLOAT_TARGETS+=(
+    "GameHome"
+    "GameDriver-SM8350"
+    "GameDriver-SM8450"
+    "GameDriver-SM8550"
+    "GameDriver-SM8650"
+)
 
 SILENT REMOVE "system" "etc/permissions/privapp-permissions-com.samsung.android.game.gamehome.xml"
 # Note: Signature permissions usually handled by PackageManager, but removing file works too
@@ -78,7 +90,10 @@ BLOAT_TARGETS+=(
     "Maps"
     "PlayAutoInstallConfig" # PAI
     "YouTube"
+    "HotwordEnrollmentOKGoogleEx4HEXAGON"
+    "HotwordEnrollmentXGoogleEx4HEXAGON"
     "Messages"
+    "Velvet"
 )
 
 SILENT REMOVE "product" "overlay/GmsConfigOverlaySearchSelector.apk"
@@ -256,6 +271,9 @@ SILENT REMOVE "system" "etc/sysconfig/samsungsimunlock.xml"
 SILENT REMOVE "system" "lib64/android.security.securekeygeneration-ndk.so"
 SILENT REMOVE "system" "lib64/libssu_keystore2.so"
 
+# heatmap
+SILENT REMOVE "system" "bin/heatmap"
+SILENT REMOVE "system" "etc/init/init.sec-heatmap.rc"
 
 NUKE_BLOAT "${BLOAT_TARGETS[@]}"
 

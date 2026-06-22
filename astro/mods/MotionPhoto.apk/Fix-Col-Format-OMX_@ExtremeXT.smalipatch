@@ -1,0 +1,5 @@
+FILE smali/com/samsung/android/sum/core/filter/EncoderFilter.smali
+FIND_REPLACE "const v4, 0x7f420888" "const v4, 0x7f000789"
+END
+
+END

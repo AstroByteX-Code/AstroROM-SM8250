@@ -13,15 +13,14 @@ FF "FRAMEWORK_SUPPORT_PERSONALIZED_DATA_CORE" "TRUE"
 FF "FRAMEWORK_SUPPORT_SMART_SUGGESTIONS_WIDGET" "TRUE"
 FF "FRAMEWORK_SUPPORT_STACK_WIDGET_AUTO_ROTATION" "TRUE"
 
-ADD_FROM_FW "pa3q" "system" "priv-app/SamsungSmartSuggestions" 
-ADD_FROM_FW "pa3q" "system" "priv-app/Moments" 
-ADD_FROM_FW "pa3q" "system" "etc/sysconfig/moments.xml"
-
-# Environment adaptive display
-# rest of patches are in services.jar
-ADD_FROM_FW "pa3q" "system" "priv-app/EnvironmentAdaptiveDisplay" 
-FF "SUPPORT_COLOR_LENS" "TRUE" 
-
+SILENT NUKE_BLOAT "SamsungSmartSuggestions"
+ADD_FROM_FW "pa1q" "system" "priv-app/SamsungSmartSuggestions"
+ADD_FROM_FW "pa1q" "system" "priv-app/Moments"
+ADD_FROM_FW "pa1q" "system" "etc/sysconfig/moments.xml"
+ADD_FROM_FW "pa1q" "system" "etc/permissions/privapp-permissions-com.samsung.android.app.moments.xml"
+ADD_FROM_FW "pa1q" "system" "etc/default-permissions/default-permissions-com.samsung.android.app.moments.xml"
+ADD_FROM_FW "pa1q" "system" "etc/permissions/privapp-permissions-com.samsung.android.smartsuggestions.xml"
+ADD_FROM_FW "pa1q" "system" "etc/default-permissions/default-permissions-com.samsung.android.smartsuggestions.xml"
 
 # MFContents
 ADD_FROM_FW "pa3q" "system" "etc/mfcontents"
@@ -47,10 +46,6 @@ ADD_FROM_FW "pa3q" "system" "priv-app/SamsungAiCore"
 ADD_FROM_FW "pa3q" "system" "priv-app/OfflineLanguageModel_stub"
 FF "GENAI_SUPPORT_OFFLINE_LANGUAGEMODEL" "TRUE"
 
-# WiFi
-ADD_FROM_FW "pa3q" "system" "app/WifiIntelligence"
-ADD_FROM_FW "pa3q" "system" "app/WifiAiService"
-
 # Sketchbook
 ADD_FROM_FW "pa3q" "system" "app/SketchBook" 
 
@@ -75,7 +70,6 @@ FF "GENAI_SUPPORT_STYLE_TRANSFER" "TRUE"
 ADD_FROM_FW "pa3q" "product" "priv-app/AICore" 
 ADD_FROM_FW "pa3q" "product" "priv-app/AiWallpaper" 
 ADD_FROM_FW "pa3q" "system" "priv-app/SpriteWallpaper"  #Used to animate Infinity wallpapers
-
 
 # Photo Editor & Gallery
 SILENT NUKE_BLOAT "PhotoEditor_Full"
@@ -104,14 +98,6 @@ FF "GALLERY_CONFIG_ZOOM_TYPE" "ZOOM_2K"
 ADD_FROM_FW "pa3q" "system" "etc/permissions" 
 ADD_FROM_FW "pa3q" "system" "etc/default-permissions"
 
-# Bixby 
-ADD_FROM_FW "pa3q" "system" "priv-app/BixbyInterpreter" 
-
-# Phone Packages
-ADD_FROM_FW "pa3q" "system" "priv-app/SamsungInCallUI" 
-ADD_FROM_FW "pa3q" "system" "priv-app/SamsungIntelliVoiceServices" 
-ADD_FROM_FW "pa3q" "system" "priv-app/SamsungDialer" 
-
 # etc
 ADD_FROM_FW "pa3q" "system" "app/SmartCapture" 
 ADD_FROM_FW "pa3q" "system" "app/VisualCloudCore" 
@@ -134,22 +120,6 @@ FF "MMFW_SUPPORT_MEDIA_CONTEXT_ANALYZER" "TRUE"
 ADD_FROM_FW "pa3q" "system" "lib64/libcontextanalyzer_jni.media.samsung.so"
 ADD_FROM_FW "pa3q" "system" "lib64/libvideo-highlight-arm64-v8a.so"
 ADD_FROM_FW "pa3q" "system" "lib64/libmediacontextanalyzer.so"
-
-
-if GET_FEATURE DEVICE_HAVE_NPU; then
-    FF "MMFW_CONFIG_MEDIA_CONTEXT_ANALYZER_CORE" "NPU"
-else
-    FF "MMFW_CONFIG_MEDIA_CONTEXT_ANALYZER_CORE" "GPU"
-fi
-
-
-# Semantic Search Core
-FF "MSCH_SUPPORT_NLSEARCH" "TRUE"
-ADD_FROM_FW "pa3q" "system" "etc/mediasearch"
-ADD_FROM_FW "pa3q" "system" "priv-app/MediaSearch/MediaSearch.apk"
-ADD_FROM_FW "pa3q" "system" "priv-app/SemanticSearchCore/SemanticSearchCore.apk"
-
-ADD_FROM_FW "pa3q" "system" "priv-app/SecSettingsIntelligence"
 
 
 # Basic features

@@ -1,5 +1,6 @@
 #https://github.com/ShaDisNX255/NcX_Stock/commit/dc8a0872d0362dc7a1a723623558a73336193975
 
+
 LOG_BEGIN "Removing Samsung Encryption"
 
 while IFS= read -r -d '' FSTAB; do
@@ -21,6 +22,7 @@ done < <(
         -name "fstab*" \
         -print0
 )
+
 
 # Disable FRP
 BPROP "vendor"  "ro.frp.pst" ""

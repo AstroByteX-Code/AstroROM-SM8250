@@ -5,10 +5,9 @@ if GET_FEATURE DEVICE_HAVE_QHD_PANEL; then
     else
         LOG_INFO "Enabling QHD resolution support ..."
 
+        SILENT NUKE_BLOAT "SecSettings"
+        ADD_FROM_FW "dm3q" "system" "priv-app/SecSettings"
         FF "SEC_FLOATING_FEATURE_COMMON_CONFIG_DYN_RESOLUTION_CONTROL" "WQHD,FHD,HD"
-
-        ADD_PATCH "SecSettings.apk" \
-            "$SCRPATH/patches/Enable-QHD-Resolution-Settings.smalipatch"
 
         ADD_PATCH "framework.jar" \
             "$SCRPATH/patches/Enable-QHD-Resolution-Support.sh"
