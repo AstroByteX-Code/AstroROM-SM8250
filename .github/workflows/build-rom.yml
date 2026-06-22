@@ -1,17 +1,7 @@
 name: Build AstroROM
-run-name: Building ROM > ${{ inputs.device }}
+run-name: Building ROM > y2q
 on:
   workflow_dispatch:
-    inputs:
-      device:
-        description: 'Choose objective'
-        required: true
-        default: ''
-      upload_cloud:
-        description: 'Upload ROM to cloud (PixelDrain)'
-        required: false
-        default: false
-        type: boolean
 
 jobs:
   build:
@@ -54,23 +44,20 @@ jobs:
       - name: Disk Space Check
         run: df -h /
 
-      - name: Run AstroROM Build
+      - name: Run AstroROM Build (y2q)
         run: |
-          sudo bash build.sh --build ${{ inputs.device }}
-
+          sudo bash build.sh --build y2q
 
       - name: Download PixelDrain CLI (pd)
-        if: ${{ inputs.upload_cloud }}
         run: |
           curl -L https://github.com/jkawamoto/go-pixeldrain/releases/download/v0.7.6/pd_0.7.6_linux_amd64.tar.gz -o pd.tar.gz
           tar -xvf pd.tar.gz
           chmod +x pd
           sudo mv pd /usr/local/bin/pd
-          
+
       - name: Upload ROM to PixelDrain
-        if: ${{ inputs.upload_cloud }}
         env:
-          PIXELDRAIN_API_KEY: ${{ secrets.PIXELDRAIN_API_KEY }}
+          PIXELDRAIN_API_KEY: 800269c5-1f1f-4966-a85c-fdf7de2dde31
         run: |
           cd out
           ROM_FILE=$(ls *.zip | head -n 1)
