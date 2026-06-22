@@ -26,7 +26,6 @@ CREATE_FLASHABLE_ZIP()
     local SUPER_IMAGE_PATH
     local ZIP_BUILD_DIR
     local UNSIGNED_ZIP_PATH
-    local SIGNED_ZIP_PATH
     local UPDATER_SCRIPT_PATH
     local COMPRESSION_LEVEL=3
 
@@ -39,7 +38,6 @@ CREATE_FLASHABLE_ZIP()
     ZIP_BUILD_DIR="${DIROUT}/zip_build"
 
     UNSIGNED_ZIP_PATH="${DIROUT}/${ZIP_NAME_PREFIX}.zip"
-    SIGNED_ZIP_PATH="${DIROUT}/${ZIP_NAME_PREFIX}_signed.zip"
 
     [[ -f "${SUPER_IMAGE_PATH}" ]] || ERROR_EXIT "super.img missing."
     COMMAND_EXISTS "7z" || ERROR_EXIT "7z tool not found."
@@ -78,6 +76,11 @@ CREATE_FLASHABLE_ZIP()
         EXTRA_BLOCKS+=$'\nui_print "Installing Param...";\nupdate_zip up_param.bin $(find_block up_param);'
     fi
 
+    if [[ -f "${ASTROROM}/objectives/${CODENAME}/postinstall.edify" ]]; then
+        EXTRA_BLOCKS+=$'\n'
+        EXTRA_BLOCKS+=$(<"${ASTROROM}/objectives/${CODENAME}/postinstall.edify")
+    fi
+
     if [[ -f "${UPDATER_SCRIPT_PATH}" ]]; then
         local ASSERT_BLOCKS="${EXTRA_BLOCKS//$'\n'/\\n}"
 
@@ -95,16 +98,7 @@ CREATE_FLASHABLE_ZIP()
 
     rm -rf "${ZIP_BUILD_DIR}"
 
-    LOG_INFO "Signing ZIP.."
-    java -jar "${PREBUILTS}/signapk/signapk.jar" -w \
-        "${PREBUILTS}/signapk/keys/aosp_testkey.x509.pem" \
-        "${PREBUILTS}/signapk/keys/aosp_testkey.pk8" \
-        "$UNSIGNED_ZIP_PATH" \
-        "$SIGNED_ZIP_PATH" \
-        || ERROR_EXIT "Signing failed"
-
-    rm -f "${UNSIGNED_ZIP_PATH}"
-    LOG_END "Flashable zip created at $(basename "${SIGNED_ZIP_PATH}")"
+    LOG_END "Flashable zip created at $(basename "${UNSIGNED_ZIP_PATH}")"
 }
 
 
