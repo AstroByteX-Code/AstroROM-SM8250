@@ -81,6 +81,7 @@ This project wouldn't be possible without the incredible work of:
 - **[jesec](https://github.com/jesec)** - For samfirm.js , which we use to download the latest firmwares.
 - **[3arthur6](https://github.com/3arthur6)** - For bluetooth library patcher.
 - **[soulr344](https://github.com/soulr344/OMCDecoder)** - For omc decoder.
+- **[MianHamza](t.me/@Code_by_Mian)** - For making the script work on sm8250.
 ---
 
 ## Licensing
