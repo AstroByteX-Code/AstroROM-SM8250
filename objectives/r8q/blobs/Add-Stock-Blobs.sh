@@ -4,8 +4,8 @@ ADD_FROM_FW "stock" "system" "priv-app/GameDriver-SM8250"
 ADD_FROM_FW "stock" "system" "etc/init/rscmgr.rc"
 
 #Light Sensor App
-ADD_FROM_FW "a52" "system" "etc/permissions/privapp-permissions-com.samsung.adaptivebrightnessgo.cameralightsensor.xml"
-ADD_FROM_FW "a52" "system" "priv-app/CameraLightSensor"
+ADD_FROM_FW "y2q" "system" "etc/permissions/privapp-permissions-com.samsung.adaptivebrightnessgo.cameralightsensor.xml"
+ADD_FROM_FW "y2q" "system" "priv-app/CameraLightSensor"
 
 #Lux Map config
 ADD_FROM_FW "stock" "system" "etc/ev_lux_map_config.xml"
@@ -62,8 +62,8 @@ ADD_FROM_FW "stock" "system" "etc/permissions/com.sec.feature.cover.clearsidevie
 ADD_FROM_FW "stock" "system" "priv-app/DesktopSystemUI"
 
 # Add stock TUI app
-ADD_FROM_FW "a52" "system" "system_ext/app/com.qualcomm.qti.services.secureui"
-ADD_FROM_FW "a52" "system" "etc/sysconfig/preinstalled-packages-com.qualcomm.qti.services.secureui.xml"
+ADD_FROM_FW "y2q" "system" "system_ext/app/com.qualcomm.qti.services.secureui"
+ADD_FROM_FW "y2q" "system" "etc/sysconfig/preinstalled-packages-com.qualcomm.qti.services.secureui.xml"
 
 # Add a73 libhwui
 ADD_FROM_FW "a73" "system" "lib/libhwui.so"
@@ -108,5 +108,3 @@ ADD_FROM_FW "stock" "system" "etc/permissions/com.sec.feature.cover.clearsidevie
 ADD_FROM_FW "stock" "system" "etc/permissions/com.sec.feature.cover.xml"
 ADD_FROM_FW "stock" "system" "etc/permissions/com.sec.feature.cover.sview.xml"
 ADD_FROM_FW "stock" "system" "etc/permissions/com.sec.feature.nfc_authentication_cover.xml"
-
-
