@@ -3,6 +3,9 @@ run-name: Building ROM > c2q
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-24.04
@@ -48,24 +51,26 @@ jobs:
         run: |
           sudo bash build.sh --build c2q
 
-      - name: Download PixelDrain CLI (pd)
+      - name: Locate built ROM ZIP
+        id: rom
         run: |
-          curl -L https://github.com/jkawamoto/go-pixeldrain/releases/download/v0.7.6/pd_0.7.6_linux_amd64.tar.gz -o pd.tar.gz
-          tar -xvf pd.tar.gz
-          chmod +x pd
-          sudo mv pd /usr/local/bin/pd
+          ROM_PATH=$(find out -type f -name '*.zip' | head -n 1)
 
-      - name: Upload ROM to PixelDrain
-        env:
-          PIXELDRAIN_API_KEY: 800269c5-1f1f-4966-a85c-fdf7de2dde31
-        run: |
-          cd out
-          ROM_FILE=$(ls *.zip | head -n 1)
-
-          if [ -z "$ROM_FILE" ]; then
+          if [ -z "$ROM_PATH" ]; then
             echo "No ROM zip found!"
             exit 1
           fi
 
-          echo "Uploading $ROM_FILE to PixelDrain..."
-          pd --api-key "$PIXELDRAIN_API_KEY" upload "$ROM_FILE" | sed 's|api/file|u|g'
+          echo "rom_path=$ROM_PATH" >> "$GITHUB_OUTPUT"
+          echo "Found ROM: $ROM_PATH"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: astro-rom-c2q-${{ github.run_number }}
+          name: AstroROM c2q Build ${{ github.run_number }}
+          body: Automated build from GitHub Actions.
+          files: ${{ steps.rom.outputs.rom_path }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
