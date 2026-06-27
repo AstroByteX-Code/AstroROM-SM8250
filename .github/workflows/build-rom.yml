@@ -1,5 +1,5 @@
 name: Build AstroROM
-run-name: Building ROM > y2q
+run-name: Building ROM > c2q
 on:
   workflow_dispatch:
 
@@ -44,9 +44,9 @@ jobs:
       - name: Disk Space Check
         run: df -h /
 
-      - name: Run AstroROM Build (y2q)
+      - name: Run AstroROM Build (c2q)
         run: |
-          sudo bash build.sh --build y2q
+          sudo bash build.sh --build c2q
 
       - name: Download PixelDrain CLI (pd)
         run: |
