@@ -315,7 +315,7 @@ AVAILABLE OBJECTIVES:
 
 
 EXAMPLES:
-  sudo ./build.sh build x1q
+  sudo ./build.sh build c2q
   sudo ./build.sh b
   sudo ./build.sh clean --workspace
   sudo ./build.sh clean --all
