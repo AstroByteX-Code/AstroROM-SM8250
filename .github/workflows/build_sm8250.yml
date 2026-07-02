@@ -1,5 +1,5 @@
 name: Build AstroROM for sm8250
-run-name: Building ROM > y2q
+run-name: Building ROM > ${{ inputs.device }}
 on:
   workflow_dispatch:
     inputs:
@@ -63,7 +63,7 @@ jobs:
 
       - name: Run AstroROM Build
         run: |
-          sudo bash build_sm8250.sh --build y2q
+          sudo bash build_sm8250.sh --build ${{ inputs.device }}
 
 
       - name: Download PixelDrain CLI (pd)
