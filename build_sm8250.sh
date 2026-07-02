@@ -186,18 +186,22 @@ case "$DEVICE" in
 
         LOG_BEGIN "Merging vendor parts into vendor.img for $DEVICE..."
 
-        # Remove old merged file if exists
-        rm -f "$MERGED_VENDOR_IMG"
-
-        # Concatenate all parts (ensure correct order: part00, part01, ...)
-        cat "$VENDOR_PARTS_DIR"/vendor.img.part* > "$MERGED_VENDOR_IMG" || ERROR_EXIT "Failed to merge vendor parts"
-
-        LOG_INFO "Merged vendor.img created at $MERGED_VENDOR_IMG"
+        # >>> INSERTED BLOCK STARTS HERE <<<
+        # Check if parts exist
+        if ls "$VENDOR_PARTS_DIR"/vendor.img.part* 1> /dev/null 2>&1; then
+            LOG_INFO "Merging vendor parts into vendor.img..."
+            rm -f "$MERGED_VENDOR_IMG"
+            cat "$VENDOR_PARTS_DIR"/vendor.img.part* > "$MERGED_VENDOR_IMG" || ERROR_EXIT "Failed to merge vendor parts"
+            LOG_INFO "Merged vendor.img created at $MERGED_VENDOR_IMG"
+        else
+            LOG_INFO "No vendor parts found, using existing vendor.img if available"
+        fi
 
         # Verify Vendor Image
         if [[ ! -f "$MERGED_VENDOR_IMG" ]]; then
             ERROR_EXIT "Vendor image not found at: $MERGED_VENDOR_IMG"
         fi
+        # >>> INSERTED BLOCK ENDS HERE <<<
 
         LOG_BEGIN "Replacing vendor with external image..."
 
