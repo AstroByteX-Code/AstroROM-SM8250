@@ -1,0 +1,25 @@
+
+SILENT REMOVE "vendor" "etc/init/nxp-uwb-service.rc"
+SILENT REMOVE "vendor" "bin/hw/vendor.samsung.hardware.uwb@1.0-service"
+SILENT REMOVE "vendor" "etc/libuwb-countrycode.conf"
+SILENT REMOVE "vendor" "etc/libuwb-feature.conf"
+SILENT REMOVE "vendor" "etc/libuwb-nxp.conf"
+SILENT REMOVE "vendor" "etc/libuwb-uci.conf"
+SILENT REMOVE "vendor" "etc/init/init.vendor.uwb.rc"
+SILENT REMOVE "vendor" "etc/init/vendor.samsung.hardware.uwb@1.0-service.rc"
+SILENT REMOVE "vendor" "firmware/uwb"
+SILENT REMOVE "vendor" "lib64/uwb_uci.hal.so"
+SILENT REMOVE "vendor" "lib64/libmemunreachable.so"
+
+# Added uwb Libs From p3q
+
+ADD_FROM_FW "p3q" "vendor" "bin/hw/vendor.samsung.hardware.uwb@1.0-service"
+ADD_FROM_FW "p3q" "vendor" "etc/libuwb-countrycode.conf"
+ADD_FROM_FW "p3q" "vendor" "etc/libuwb-feature.conf"
+ADD_FROM_FW "p3q" "vendor" "etc/libuwb-nxp.conf"
+ADD_FROM_FW "p3q" "vendor" "etc/libuwb-uci.conf"
+ADD_FROM_FW "p3q" "vendor" "etc/init/init.vendor.uwb.rc"
+ADD_FROM_FW "p3q" "vendor" "etc/init/vendor.samsung.hardware.uwb@1.0-service.rc"
+ADD_FROM_FW "p3q" "vendor" "firmware/uwb"
+ADD_FROM_FW "p3q" "vendor" "lib64/uwb_uci.hal.so"
+ADD_FROM_FW "p3q" "vendor" "lib64/libmemunreachable.so"

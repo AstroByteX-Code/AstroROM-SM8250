@@ -33,3 +33,11 @@ __pycache__/
 !.github/
 !.github/workflows/
 !.github/workflows/**
+workspace/
+out/
+firmware/
+vendor.img
+workspace/
+out/
+firmware/
+vendor.img

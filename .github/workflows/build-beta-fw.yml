@@ -61,6 +61,13 @@ jobs:
           sudo rm -rf /usr/share/sbt
           sudo apt-get clean
 
+      - name: Install F2FS Tools and Load Kernel Module
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y f2fs-tools linux-modules-extra-$(uname -r)
+          sudo depmod -a
+          sudo modprobe f2fs
+
       - name: Disk space check
         run: df -h /
 
