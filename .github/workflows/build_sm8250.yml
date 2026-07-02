@@ -1,12 +1,12 @@
 name: Build AstroROM for sm8250
-run-name: Building ROM > y2q
+run-name: Building ROM > ${{ inputs.device }}
 on:
   workflow_dispatch:
     inputs:
       device:
-        description: 'Choose objective'
+        description: 'Choose device (x1q, y2q, z3q, r8q, c1q, c2q)'
         required: true
-        default: ''
+        default: 'y2q'
       upload_cloud:
         description: 'Upload ROM to cloud (PixelDrain)'
         required: false
@@ -63,8 +63,7 @@ jobs:
 
       - name: Run AstroROM Build
         run: |
-          sudo bash build_sm8250.sh --build y2q
-
+          sudo bash build_sm8250.sh --build ${{ inputs.device }}
 
       - name: Download PixelDrain CLI (pd)
         if: ${{ inputs.upload_cloud }}
