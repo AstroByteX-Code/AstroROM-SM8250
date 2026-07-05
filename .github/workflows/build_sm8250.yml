@@ -66,11 +66,13 @@ jobs:
         run: |
           sudo bash build_sm8250.sh --build ${{ matrix.device }}
 
-      - name: Upload ROM Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: AstroROM-${{ matrix.device }}
-          path: out/*.zip
+      - name: Download PixelDrain CLI (pd)
+        if: ${{ inputs.upload_cloud }}
+        run: |
+          curl -L https://github.com/jkawamoto/go-pixeldrain/releases/download/v0.7.6/pd_0.7.6_linux_amd64.tar.gz -o pd.tar.gz
+          tar -xvf pd.tar.gz
+          chmod +x pd
+          sudo mv pd /usr/local/bin/pd
 
       - name: Upload ROM to PixelDrain (CLI with retry)
         if: ${{ inputs.upload_cloud }}
