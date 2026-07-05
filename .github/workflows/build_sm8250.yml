@@ -61,26 +61,24 @@ jobs:
       - name: Disk Space Check
         run: df -h /
 
-      - name: Run AstroROM Build
+      - name: Download PixelDrain CLI
+        if: ${{ inputs.upload_cloud }}
         run: |
-          sudo bash build_sm8250.sh --build ${{ inputs.device }}
+          curl -L https://github.com/jkawamoto/go-pixeldrain/releases/download/v0.7.6/pd_0.7.6_linux_amd64.tar.gz -o pd.tar.gz
+          tar -xvf pd.tar.gz
+          chmod +x pd
+          sudo mv pd /usr/local/bin/pd
 
-      - name: Upload ROM to PixelDrain (curl)
+      - name: Upload ROM to PixelDrain
         if: ${{ inputs.upload_cloud }}
         env:
           PIXELDRAIN_API_KEY: ${{ secrets.PIXELDRAIN_API_KEY }}
         run: |
           cd out
-          ROM_FILE=$(ls *.zip | head -n 1)
 
-          if [ -z "$ROM_FILE" ]; then
-            echo "No ROM zip found!"
-            exit 1
-          fi
+          ROM_FILE=$(ls *.zip 2>/dev/null | head -n 1)
+          [[ -z "$ROM_FILE" ]] && { echo "No ROM zip found"; exit 1; }
 
           echo "Uploading $ROM_FILE to PixelDrain..."
-          RESPONSE=$(curl -s -X POST "https://pixeldrain.com/api/file" \
-            -H "Authorization: $PIXELDRAIN_API_KEY" \
-            -F "file=@$ROM_FILE")
-
-          echo "PixelDrain response: $RESPONSE"
+          pd --api-key "$PIXELDRAIN_API_KEY" upload "$ROM_FILE" \
+            | sed 's|api/file|u|g'
