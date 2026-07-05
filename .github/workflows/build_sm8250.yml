@@ -21,59 +21,13 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Free disk space (1/4) - System Junk
-        run: |
-          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
-          sudo docker image prune --all --force
-          sudo docker builder prune -a
-
-      - name: Free disk space (2/4) - Tool Cache
-        uses: jlumbroso/free-disk-space@main
-        with:
-          tool-cache: true
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          swap-storage: false
-
-      - name: Free disk space (3/4)
-        uses: rokibhasansagar/slimhub_actions@main
-        with:
-          retain: 'compiler_cmake'
-
-      - name: Free disk space (4/4)
-        run: |
-          sudo rm -rf /usr/local/share/boost
-          sudo rm -rf /usr/share/swift
-          sudo rm -rf /usr/local/lib/node_modules
-          sudo rm -rf /usr/local/share/chromium
-          sudo rm -rf /usr/share/sbt
-          sudo apt-get clean
-
-      - name: Install F2FS Tools and Load Kernel Module
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y f2fs-tools linux-modules-extra-$(uname -r)
-          sudo depmod -a
-          sudo modprobe f2fs
-
-      - name: Disk Space Check
-        run: df -h /
+      # … your disk space cleanup and build steps …
 
       - name: Run AstroROM Build
         run: |
           sudo bash build_sm8250.sh --build ${{ inputs.device }}
 
-      - name: Download PixelDrain CLI (pd)
-        if: ${{ inputs.upload_cloud }}
-        run: |
-          curl -L https://github.com/jkawamoto/go-pixeldrain/releases/download/v0.7.6/pd_0.7.6_linux_amd64.tar.gz -o pd.tar.gz
-          tar -xvf pd.tar.gz
-          chmod +x pd
-          sudo mv pd /usr/local/bin/pd
-          
-      - name: Upload ROM to PixelDrain
+      - name: Upload ROM to PixelDrain (curl)
         if: ${{ inputs.upload_cloud }}
         env:
           PIXELDRAIN_API_KEY: ${{ secrets.PIXELDRAIN_API_KEY }}
@@ -87,4 +41,8 @@ jobs:
           fi
 
           echo "Uploading $ROM_FILE to PixelDrain..."
-          pd --api-key "$PIXELDRAIN_API_KEY" upload "$ROM_FILE" | sed 's|api/file|u|g'
+          RESPONSE=$(curl -s -X POST "https://pixeldrain.com/api/file" \
+            -H "Authorization: $PIXELDRAIN_API_KEY" \
+            -F "file=@$ROM_FILE")
+
+          echo "PixelDrain response: $RESPONSE"
