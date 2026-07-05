@@ -1,12 +1,7 @@
 name: Build AstroROM for sm8250
-run-name: Building ROM > ${{ inputs.device }}
 on:
   workflow_dispatch:
     inputs:
-      device:
-        description: 'Choose device (x1q, y2q, z3q, r8q, c1q, c2q)'
-        required: true
-        default: 'y2q'
       upload_cloud:
         description: 'Upload ROM to cloud (PixelDrain)'
         required: false
@@ -16,6 +11,12 @@ on:
 jobs:
   build:
     runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        device: [ r8q]
+      fail-fast: false
+
+    name: Build ROM > ${{ matrix.device }}
 
     steps:
       - name: Checkout Repository
@@ -61,24 +62,36 @@ jobs:
       - name: Disk Space Check
         run: df -h /
 
-      - name: Download PixelDrain CLI
+      - name: Run AstroROM Build
+        run: |
+          sudo bash build_sm8250.sh --build ${{ matrix.device }}
+
+      - name: Upload ROM Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AstroROM-${{ matrix.device }}
+          path: out/*.zip
+
+      - name: Download PixelDrain CLI (pd)
         if: ${{ inputs.upload_cloud }}
         run: |
           curl -L https://github.com/jkawamoto/go-pixeldrain/releases/download/v0.7.6/pd_0.7.6_linux_amd64.tar.gz -o pd.tar.gz
           tar -xvf pd.tar.gz
           chmod +x pd
           sudo mv pd /usr/local/bin/pd
-
+          
       - name: Upload ROM to PixelDrain
         if: ${{ inputs.upload_cloud }}
         env:
           PIXELDRAIN_API_KEY: ${{ secrets.PIXELDRAIN_API_KEY }}
         run: |
           cd out
+          ROM_FILE=$(ls *.zip | head -n 1)
 
-          ROM_FILE=$(ls *.zip 2>/dev/null | head -n 1)
-          [[ -z "$ROM_FILE" ]] && { echo "No ROM zip found"; exit 1; }
+          if [ -z "$ROM_FILE" ]; then
+            echo "No ROM zip found!"
+            exit 1
+          fi
 
-          echo "Uploading $ROM_FILE to PixelDrain..."
-          pd --api-key "$PIXELDRAIN_API_KEY" upload "$ROM_FILE" \
-            | sed 's|api/file|u|g'
+          echo "Uploading $ROM_FILE for ${{ matrix.device }} to PixelDrain..."
+          pd --api-key "$PIXELDRAIN_API_KEY" upload "$ROM_FILE" | sed 's|api/file|u|g'
