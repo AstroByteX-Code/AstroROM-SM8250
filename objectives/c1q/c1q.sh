@@ -31,8 +31,8 @@ STOCK_IMEI="352404911234563"
 
 # Source firmware details
 MODEL="SM-S901E"
-CSC="PKD"
-IMEI="352404911234563"
+CSC="INS"
+IMEI="350999641234561"
 
 # Extra firmware (Optional) details
 EXTRA_MODEL=""

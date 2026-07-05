@@ -20,19 +20,18 @@
 # SOFTWARE.
 #
 
-# Galaxy S20 config
 CODENAME="x1q"
 DEVICE_VNDK_VERSION="30"
 
 # Stock firmware details
 STOCK_MODEL="SM-G981N"
 STOCK_CSC="KOO"
-STOCK_IMEI="352404911234563"
+STOCK_IMEI="353346112901525"
 
 # Source firmware details
 MODEL="SM-S908E"
-CSC="PKD"
-IMEI="352404911234563"
+CSC="XSG"
+IMEI="350272254378301"
 
 # Extra firmware (Optional) details
 EXTRA_MODEL=""
