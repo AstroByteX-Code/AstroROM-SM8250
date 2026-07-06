@@ -98,25 +98,6 @@ BLOAT_TARGETS+=(
 
 SILENT REMOVE "product" "overlay/GmsConfigOverlaySearchSelector.apk"
 
-
-#  FACTORY & TEST TOOLS (HwModuleTest)
-BLOAT_TARGETS+=(
-    "Cameralyzer"
-    "FactoryAirCommandManager"
-    "FactoryCameraFB"
-    "HMT"
-    "WlanTest"
-    "FacAtFunction"
-    "FactoryTestProvider"
-    "AutomationTest_FB"
-    "DRParser"
-)
-
-SILENT REMOVE "system" "etc/default-permissions/default-permissions-com.sec.factory.cameralyzer.xml"
-SILENT REMOVE "system" "etc/permissions/privapp-permissions-com.samsung.android.providers.factory.xml"
-SILENT REMOVE "system" "etc/permissions/privapp-permissions-com.sec.facatfunction.xml"
-
-
 #  COVER SERVICES
 BLOAT_TARGETS+=(
     "LedCoverService"
