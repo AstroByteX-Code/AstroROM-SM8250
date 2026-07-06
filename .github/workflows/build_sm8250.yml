@@ -67,15 +67,13 @@ jobs:
           sudo bash build_sm8250.sh --build ${{ matrix.device }}
 
       - name: Download PixelDrain CLI (pd)
-        if: ${{ inputs.upload_cloud }}
         run: |
           curl -L https://github.com/jkawamoto/go-pixeldrain/releases/download/v0.7.6/pd_0.7.6_linux_amd64.tar.gz -o pd.tar.gz
           tar -xvf pd.tar.gz
           chmod +x pd
           sudo mv pd /usr/local/bin/pd
-
-      - name: Upload ROM to PixelDrain (CLI with retry)
-        if: ${{ inputs.upload_cloud }}
+          
+      - name: Upload ROM to PixelDrain
         env:
           PIXELDRAIN_API_KEY: ${{ secrets.PIXELDRAIN_API_KEY }}
         run: |
@@ -87,24 +85,5 @@ jobs:
             exit 1
           fi
 
-          echo "Uploading $ROM_FILE for ${{ matrix.device }} to PixelDrain..."
-          for i in {1}; do
-            OUTPUT=$(pd --api-key "$PIXELDRAIN_API_KEY" upload "$ROM_FILE" 2>&1)
-            echo "$OUTPUT"
-
-            # Check if upload succeeded by looking for a PixelDrain link
-            LINK=$(echo "$OUTPUT" | sed -n 's|.*https://pixeldrain.com/u/||p')
-            if [ -n "$LINK" ]; then
-              echo "Upload successful!"
-              echo "Download link: https://pixeldrain.com/u/$LINK"
-              break
-            else
-              echo "Upload failed (attempt $i). Retrying in 60s..."
-              sleep 60
-            fi
-          done
-            exit 1
-          fi
-
-          echo "Uploading $ROM_FILE for ${{ matrix.device }} to PixelDrain..."
+          echo "Uploading $ROM_FILE to PixelDrain..."
           pd --api-key "$PIXELDRAIN_API_KEY" upload "$ROM_FILE" | sed 's|api/file|u|g'
