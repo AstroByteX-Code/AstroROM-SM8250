@@ -20,7 +20,7 @@ set -o pipefail
 ASTROROM="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export ASTROROM
 
-ROM_VERSION="3.6.0-"
+ROM_VERSION="3.9.0-"
 
 BETA_ASSERT=0
 BETA_OTA_URL=""
