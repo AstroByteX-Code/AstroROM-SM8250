@@ -9,7 +9,7 @@ ui_print " "
 ui_print "AstroROM  __ROM_VERSION__  for __MODEL_NAME__  "
 ui_print " "
 ui_print "AstroROM is coded by @SameerAlSahab "
-ui_print " "
+ui_print "  Build by: Mian Hamza       "
 ui_print "Build: __BUILD_DATE__"
 
 
@@ -18,8 +18,13 @@ ui_print "Build: __BUILD_DATE__"
 ui_print "Checking device ..."
 
 device_codename=$(getprop ro.product.vendor.device)
-if [ "$device_codename" != "__CODENAME__" ]; then
-    abort "Error: This ROM is for __MODEL_NAME__ (__CODENAME__ only). Detected: $device_codename"
+if [ "$device_codename" != "x1q" ] && \
+   [ "$device_codename" != "y2q" ] && \
+   [ "$device_codename" != "z3q" ] && \
+   [ "$device_codename" != "c1q" ] && \
+   [ "$device_codename" != "c2q" ] && \
+   [ "$device_codename" != "r8q" ]; then
+    abort "Error: This ROM is for __MODEL_NAME__ (x1q, y2q, r8q, c1q, c2q, z3q only). Detected: $device_codename"
 else
     ui_print "Device is compatible."
 fi
