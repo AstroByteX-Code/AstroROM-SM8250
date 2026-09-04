@@ -200,13 +200,22 @@ UNPACK_PARTITION()
     case "$FS_TYPE" in
         "ext4") mount -o ro "$IMAGE_PATH" "$MNT" ;;
         "erofs") SILENT "$PREBUILTS/erofs-utils/fuse.erofs" "$IMAGE_PATH" "$MNT" ;;
-        "f2fs") [[ ! IS_WSL ]] && mount -o ro "$IMAGE_PATH" "$MNT" ;;
+        "f2fs") if ! IS_WSL; then
+                    mount -o ro "$IMAGE_PATH" "$MNT" \
+                        || ERROR_EXIT "Failed to mount f2fs image: $IMAGE_PATH (is the f2fs kernel module loaded?)"
+                fi ;;
         *)      ERROR_EXIT "Unsupported filesystem: $FS_TYPE"; return 1 ;;
     esac
 
 
     cp -a -T "$MNT" "$DEST_DIR"
 
+	# Make every directory traversable and every file readable so the
+    # build user (SUDO_USER) can access the extracted tree.
+    chmod -R a+rX "$DEST_DIR"
+    local _BUILD_USER="${SUDO_USER:-$(whoami)}"
+    chown -R "${_BUILD_USER}:${_BUILD_USER}" "$DEST_DIR" 2>/dev/null || true
+	
     # Generate Linux perms & SELinux contexts
 	#https://source.android.com/docs/security/features/selinux
 	#https://source.android.com/docs/security/features/selinux/implement
@@ -218,7 +227,7 @@ UNPACK_PARTITION()
 
 	# Generate file_contexts: SELinux security contexts
     # Format: <path> <selinux_context>
-    find "$MNT" | xargs -I {} sh -c 'echo "{} $(getfattr -n security.selinux --only-values -h --absolute-names "{}")"' sh > "$FILE_CONT"
+    find "$MNT" | xargs -I {} sh -c 'echo "{} $(getfattr -n security.selinux --only-values -h --absolute-names "{}" 2>/dev/null)"' sh > "$FILE_CONT"
 
     sort -o "$FS_CONFIG" "$FS_CONFIG"
     sort -o "$FILE_CONT" "$FILE_CONT"
@@ -237,7 +246,9 @@ UNPACK_PARTITION()
 
     # Escape Regex metacharacters
     sed -i -E 's/([][()+*.^$?\\|])/\\\1/g' "$FILE_CONT"
-    sed -i "/^PARTITIONS=/s/\"$/ $PART_NAME\"/" "$UNPACK_CONF"
+    if [[ -f "$UNPACK_CONF" ]]; then
+        sed -i "/^PARTITIONS=/s/\"$/ $PART_NAME\"/" "$UNPACK_CONF"
+    fi
     # ]
 }
 
