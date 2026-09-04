@@ -1,0 +1,4 @@
+AUTHOR Ishihara0xn
+FILE smali_classes2/com/android/server/power/PowerManagerUtil.smali
+FIND_REPLACE "const-string v8, \"5\"" "const-string v8, \"4\""
+END
