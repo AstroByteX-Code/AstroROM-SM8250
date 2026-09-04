@@ -1,0 +1,2 @@
+find . -name "CoreRune.smali" -exec \
+    sed -i -E "s|sput-boolean v2, Lcom/samsung/android/rune/CoreRune;->FW_SUPPORT_APPLOCK:Z|const/4 v2, 0x1\n\n    sput-boolean v2, Lcom/samsung/android/rune/CoreRune;->FW_SUPPORT_APPLOCK:Z|g" {} +
