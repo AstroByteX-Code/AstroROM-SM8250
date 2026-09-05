@@ -6,6 +6,20 @@
 #   - Registers context for proper packaging and HAL execution
 # ==============================================================================
 
+LOG_BEGIN "Fixing Night Mode crash..."
+
+# Remove old SwISP libs
+SILENT REMOVE "system" "lib64/libSwIsp_wrapper_v1.camera.samsung.so"
+SILENT REMOVE "system" "lib64/libSwIsp_core.camera.samsung.so"
+LOG_INFO "Removed outdated SwISP wrapper/core libs"
+
+# Inject stable SwISP libs from stock firmware
+ADD_FROM_FW "stock" "system" "lib64/libSwIsp_wrapper_v1.camera.samsung.so"
+ADD_FROM_FW "stock" "system" "lib64/libSwIsp_core.camera.samsung.so"
+LOG_INFO "Injected SwISP wrapper/core libs from stock firmware"
+
+LOG_END "Night Mode crash fix applied successfully"
+
 LOG_BEGIN "Fixing Camera HAL..."
 
 # Remove outdated system camera libs
