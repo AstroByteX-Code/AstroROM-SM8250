@@ -63,7 +63,7 @@ jobs:
 
       - name: Run AstroROM Build
         run: |
-          sudo bash build_sm820.sh --build ${{ inputs.device }}
+          sudo bash build_sm8250.sh --build ${{ inputs.device }}
 
       - name: Download PixelDrain CLI (pd)
         if: ${{ inputs.upload_cloud }}
