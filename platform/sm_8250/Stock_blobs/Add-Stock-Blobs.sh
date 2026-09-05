@@ -84,7 +84,7 @@ LOG_INFO "Injected Qualcomm TUI secure UI service from y2q firmware"
 
 LOG_END "TUI patch applied successfully"
 
-LOG_BEGIN "Adding libhwui from a73..."
+LOG_BEGIN "Adding libhwui from r9q..."
 
 # Add libhwui from r9q firmware
 ADD_FROM_FW "r9q" "system" "lib/libhwui.so"
@@ -93,7 +93,7 @@ LOG_INFO "Injected libhwui (32‑bit and 64‑bit) from r9q firmware"
 
 LOG_END "libhwui patch applied successfully"
 
-LOG_BEGIN "Adding r9q  keymaster libs....
+LOG_BEGIN "Adding r9q  keymaster libs...."
 
 # Remove KeyMint/secureclock stubs
 SILENT REMOVE "system" "lib/android.hardware.security.keymint-V2-ndk.so"
@@ -116,6 +116,18 @@ ADD_FROM_FW "r9q" "system" "lib/libkeymaster4support.so"
 ADD_FROM_FW "r9q" "system" "lib64/lib_nativeJni.dk.samsung.so"
 ADD_FROM_FW "r9q" "system" "lib64/libdk_native_keymaster.so"
 LOG_INFO "Injected keymaster libraries from r9q firmware"
+
+# Register context for injected keymaster libs
+ADD_CONTEXT "system" "lib/android.hardware.keymaster@3.0.so" "system_file"
+ADD_CONTEXT "system" "lib/android.hardware.keymaster@4.0.so" "system_file"
+ADD_CONTEXT "system" "lib/android.hardware.keymaster@4.1.so" "system_file"
+ADD_CONTEXT "system" "lib/lib_nativeJni.dk.samsung.so" "system_file"
+ADD_CONTEXT "system" "lib/libdk_native_keymaster.so" "system_file"
+ADD_CONTEXT "system" "lib/libkeymaster4_1support.so" "system_file"
+ADD_CONTEXT "system" "lib/libkeymaster4support.so" "system_file"
+ADD_CONTEXT "system" "lib64/lib_nativeJni.dk.samsung.so" "system_file"
+ADD_CONTEXT "system" "lib64/libdk_native_keymaster.so" "system_file"
+LOG_INFO "Registered keymaster libs in AstroROM context"
 
 LOG_END "r9q Keymaster patch applied successfully"
 
