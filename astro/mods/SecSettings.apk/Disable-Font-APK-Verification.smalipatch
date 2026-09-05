@@ -1,4 +1,4 @@
-FILE smali_classes4/com/samsung/android/settings/display/SecDisplayUtils.smali
+FILE smali_classes5/com/samsung/android/settings/display/SecDisplayUtils.smali
 REPLACE .method public static isInvalidFont(Landroid/content/Context;Ljava/lang/String;)Z
     .locals 8
 

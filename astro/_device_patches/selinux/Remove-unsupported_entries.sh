@@ -5,6 +5,10 @@
 
 if ! GET_FEATURE DEVICE_USE_STOCK_BASE; then
 
+# One UI 9.0 entries
+ADD_SELINUX_ENTRIES \
+    mosey_app
+    
 # One UI 8.0 entries
 REMOVE_SELINUX_ENTRIES \
     heatmap_default \

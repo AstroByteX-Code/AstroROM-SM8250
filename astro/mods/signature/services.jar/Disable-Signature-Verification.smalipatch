@@ -1,0 +1,36 @@
+# https://github.com/ShaDisNX255/NcX_Stock/commit/e9fca1cedf2405c9f84dc2ee4aafa018e59de464
+# https://forum.xda-developers.com/t/mods-samsung-not-android-mods-collection-exynos.3772017/post-87773529
+# https://forum.xda-developers.com/t/mods-samsung-not-android-mods-collection-exynos.3772017/post-87773543
+
+
+FILE smali_classes2/com/android/server/pm/PackageManagerServiceUtils.smali
+REPLACE .method public static compareSignatures(Landroid/content/pm/SigningDetails;Landroid/content/pm/SigningDetails;)I
+    .locals 1
+
+    const/4 v0, 0x0
+    return v0
+
+REPLACE .method public static comparePackageSignatures(Lcom/android/server/pm/PackageSetting;Landroid/content/pm/SigningDetails;)Z
+    .locals 1
+
+    const/4 v0, 0x0
+    return v0
+
+REPLACE .method public static matchSignaturesCompat(Ljava/lang/String;Lcom/android/server/pm/PackageSignatures;Landroid/content/pm/SigningDetails;)Z
+	.locals 1
+
+	const/4 v0, 0x0
+
+	return v0
+
+REPLACE .method public static matchSignaturesRecover(Ljava/lang/String;Landroid/content/pm/SigningDetails;Landroid/content/pm/SigningDetails;I)Z
+    .locals 1
+    .param p3    # I
+        .annotation build Landroid/content/pm/PackageParser$SigningDetails$CertCapabilities;
+        .end annotation
+    .end param
+
+    const/4 v0, 0x0
+    return v0
+    
+END

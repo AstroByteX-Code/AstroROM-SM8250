@@ -7,6 +7,9 @@ BPROP "system" "ro.security.wlan.release" ""
 
 BPROP "system" "ro.security.bio.ver" ""
 BPROP "system" "ro.security.bio.release" ""
+BPROP "system" "ro.security.bt.ver" ""
+BPROP "system" "ro.security.bt.release" ""
+BPROP "system" "ro.security.ai.privacy" ""
 BPROP "system" "ro.security.mdf.ux" ""
 BPROP "system" "ro.security.fips.ux" "Disabled"
 BPROP "vendor" "ro.security.fips.ux" "Disabled"
@@ -14,6 +17,7 @@ BPROP "system" "ro.security.fips_bssl.ver" ""
 BPROP "system" "ro.config.iccc_version" ""
 
 BPROP "system" "ro.oem_unlock_supported" "0"
+BPROP "system" "ro.config.dmverity" "N"
 
 REMOVE "system" "etc/public.libraries-wsm.samsung.txt"
 REMOVE "system" "lib/libhal.wsm.samsung.so"
